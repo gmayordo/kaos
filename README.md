@@ -92,6 +92,7 @@ Los scripts de Liquibase cargan datos reales desde `equipos.yaml`:
 ## Endpoints principales
 
 ### Squads
+
 ```
 GET    /api/v1/squads                → Lista squads (filtro opcional por estado)
 GET    /api/v1/squads/{id}           → Detalle squad
@@ -100,6 +101,7 @@ PUT    /api/v1/squads/{id}          → Actualizar squad
 ```
 
 ### Personas
+
 ```
 GET    /api/v1/personas              → Lista personas (paginada + filtros avanzados)
 GET    /api/v1/personas/{id}         → Detalle persona
@@ -108,6 +110,7 @@ PUT    /api/v1/personas/{id}        → Actualizar persona
 ```
 
 **Filtros disponibles en personas:**
+
 - `squadId`: Filtrar por squad asignado
 - `rol`: Filtrar por rol (SM, DEV, QA, etc.)
 - `seniority`: Filtrar por seniority (JUNIOR, SENIOR, etc.)
@@ -116,6 +119,7 @@ PUT    /api/v1/personas/{id}        → Actualizar persona
 - `page`, `size`, `sort`: Paginación y ordenamiento
 
 ### Asignaciones (Squad Members)
+
 ```
 GET    /api/v1/squads/{squadId}/miembros    → Miembros de un squad
 GET    /api/v1/personas/{personaId}/squads → Squads de una persona
@@ -125,6 +129,7 @@ DELETE /api/v1/squad-members/{id}          → Eliminar asignación
 ```
 
 ### Perfiles de Horario
+
 ```
 GET    /api/v1/perfiles-horario      → Lista perfiles horario
 GET    /api/v1/perfiles-horario/{id} → Detalle perfil horario
@@ -146,15 +151,97 @@ DELETE /api/v1/perfiles-horario/{id} → Eliminar perfil horario
 - Sistema de logo manager para gestión centralizada
 
 ### 🧪 Testing y Calidad
- (>80% backend)
-- Exclusiones configuradas para clases de infraestructura
-- Tests unitarios para componentes críticos (SquadService, SquadMemberService)
-- Build automatizado con validación de TypeScript
-- Testing con Vitest en frontend
-- Error handling global implementado
-- Build automatizado con validación de TypeScript
 
-### 🐳 Infraestructura  (React 19 + Vite 6 + Nginx)
+## Backend (Java + Spring Boot) - JaCoCo Coverage
+
+| Métrica       | Cobertura | Estado |
+| ------------- | --------- | ------ |
+| **Instrucciones** | 99% | 🟢 Excelente |
+| **Ramas** | 94% | 🟢 Muy Bueno |
+| **Líneas** | 99% | 🟢 Excelente |
+| **Métodos** | 100% | 🟢 Perfecto |
+| **Clases** | 100% | 🟢 Perfecto |
+
+**Cobertura por paquete:**
+
+| Paquete | Instrucciones | Ramas | Estado |
+| ------- | ------------- | ----- | ------ |
+| `squad.service` | 97% | 87% | 🟡 Bueno |
+| `dedicacion.service` | 100% | 100% | 🟢 Perfecto |
+| `persona.service` | 100% | 100% | 🟢 Perfecto |
+| `horario.service` | 100% | 100% | 🟢 Perfecto |
+| `persona.controller` | 100% | 75% | 🟡 Bueno |
+| `dedicacion.controller` | 100% | N/A | 🟢 Perfecto |
+| `squad.controller` | 100% | N/A | 🟢 Perfecto |
+| `horario.controller` | 100% | N/A | 🟢 Perfecto |
+| `common.exception` | 100% | N/A | 🟢 Perfecto |
+
+**Tests implementados:**
+- ✅ Unit tests para servicios (SquadService, PersonaService, SquadMemberService, PerfilHorarioService)
+- ✅ Integration tests para controladores con mocking
+- ✅ Tests de repositorios con datos de prueba
+- ✅ Tests de mappers (MapStruct)
+- ✅ Tests de validación y error handling
+
+## Frontend (React + TypeScript) - Vitest Coverage
+
+| Archivo | Statements | Branches | Functions | Lines | Estado |
+| ------- | ---------- | -------- | --------- | ----- | ------ |
+| `logo-manager.ts` | 92.45% | 100% | 80% | 92.45% | 🟢 Excelente |
+| `LogoDisplay.tsx` | 100% | 100% | 100% | 100% | 🟢 Perfecto |
+| **Total** | **96.2%** | **100%** | **90%** | **96.2%** | 🟢 Excelente |
+
+**Resultados de testing:**
+```
+✅ TODOS LOS TESTS PASARON
+ ✓ src/routes/index.test.tsx  (67 tests) ✅
+ ✓ src/lib/logo-manager.test.ts  (16 tests) ✅
+ ✓ src/components/LogoDisplay.test.tsx  (25 tests) ✅
+
+ Test Files  3 passed (3) ✅
+      Tests  108 passed (108) ✅
+   Duration  1.10s
+```
+
+**Tests implementados:**
+- ✅ **67 tests** en rutas (navegación, estados, interacciones)
+- ✅ **16 tests** en logo-manager (lógica de selección aleatoria, tipos, URLs)
+- ✅ **25 tests** en LogoDisplay (renderizado, props, estados)
+- ✅ Tests de integración con React Testing Library
+- ✅ Tests de componentes con diferentes props y estados
+- ✅ Cobertura de edge cases y validaciones
+
+### Comandos de Testing
+
+```bash
+# Backend - Ejecutar tests con cobertura
+cd backend/
+./mvnw test
+
+# Ver reporte JaCoCo en navegador
+open target/site/jacoco/index.html
+
+# Frontend - Ejecutar tests
+cd frontend/
+npm test
+
+# Tests con watch mode
+npm run test:watch
+
+# Coverage report
+npm run test:coverage
+```
+
+### Estrategia de Testing
+
+- **Backend**: Tests unitarios + integración con JUnit 5, Mockito, Testcontainers
+- **Frontend**: Tests unitarios + integración con Vitest, React Testing Library
+- **Cobertura objetivo**: >80% en todas las métricas
+- **CI/CD**: Tests automáticos en cada push/PR
+- **Exclusiones**: Solo clases de configuración e infraestructura
+
+### 🐳 Infraestructura (React 19 + Vite 6 + Nginx)
+
 - Backend: puerto 6060 (Spring Boot 3.4 + Java 21)
 - PostgreSQL: integración con contenedor externo
 - Multi-stage builds optimizados
