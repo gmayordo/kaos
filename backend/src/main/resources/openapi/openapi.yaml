@@ -20,6 +20,14 @@ tags:
     description: Gestión de miembros del equipo
   - name: SquadMember
     description: Gestión de asignaciones persona-squad (dedicación)
+  - name: Festivo
+    description: Gestión de festivos con asignación a personas
+  - name: Vacacion
+    description: Gestión de vacaciones por persona
+  - name: Ausencia
+    description: Gestión de ausencias por persona
+  - name: Capacidad
+    description: Cálculo de capacidad disponible por persona y squad
 
 paths:
   # ═══════════════════════════════════════════════
@@ -510,6 +518,556 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
+  # ═══════════════════════════════════════════════
+  # FESTIVOS
+  # ═══════════════════════════════════════════════
+  /api/v1/festivos:
+    get:
+      operationId: listarFestivos
+      summary: Lista festivos con filtros opcionales
+      tags: [Festivo]
+      parameters:
+        - name: anio
+          in: query
+          required: false
+          schema:
+            type: integer
+          description: Filtrar por año
+        - name: tipo
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [NACIONAL, REGIONAL, LOCAL]
+          description: Filtrar por tipo de festivo
+      responses:
+        "200":
+          description: Lista de festivos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FestivoResponse"
+        "500":
+          $ref: "#/components/responses/InternalError"
+    post:
+      operationId: crearFestivo
+      summary: Crea un nuevo festivo
+      tags: [Festivo]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FestivoRequest"
+      responses:
+        "201":
+          description: Festivo creado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FestivoResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/festivos/{id}:
+    get:
+      operationId: obtenerFestivo
+      summary: Obtiene un festivo por ID
+      tags: [Festivo]
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "200":
+          description: Festivo encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FestivoResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      operationId: actualizarFestivo
+      summary: Actualiza un festivo
+      tags: [Festivo]
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FestivoRequest"
+      responses:
+        "200":
+          description: Festivo actualizado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FestivoResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      operationId: eliminarFestivo
+      summary: Elimina un festivo
+      tags: [Festivo]
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "204":
+          description: Festivo eliminado
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/festivos/carga-masiva:
+    post:
+      operationId: cargarFestivosCsv
+      summary: Carga masiva de festivos desde CSV
+      description: |
+        Procesa un archivo CSV con festivos. 
+        Formato: fecha;descripcion;tipo;emails_personas (separados por |)
+        Ejemplo: 2026-01-01;Año Nuevo;NACIONAL;persona1@ehcos.com|persona2@ehcos.com
+      tags: [Festivo]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Archivo CSV con festivos
+      responses:
+        "200":
+          description: Carga procesada (puede tener errores parciales)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FestivoCsvUploadResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/personas/{personaId}/festivos:
+    get:
+      operationId: listarFestivosPorPersona
+      summary: Lista festivos asignados a una persona
+      tags: [Festivo]
+      parameters:
+        - name: personaId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: fechaInicio
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: fechaFin
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: Festivos de la persona
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FestivoResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ═══════════════════════════════════════════════
+  # VACACIONES
+  # ═══════════════════════════════════════════════
+  /api/v1/vacaciones:
+    get:
+      operationId: listarVacaciones
+      summary: Lista vacaciones con filtros opcionales
+      tags: [Vacacion]
+      parameters:
+        - name: personaId
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int64
+        - name: squadId
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int64
+        - name: tipo
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [VACACIONES, ASUNTOS_PROPIOS, LIBRE_DISPOSICION, PERMISO]
+        - name: estado
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [SOLICITADA, REGISTRADA]
+        - name: fechaInicio
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: fechaFin
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: Lista de vacaciones
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/VacacionResponse"
+        "500":
+          $ref: "#/components/responses/InternalError"
+    post:
+      operationId: crearVacacion
+      summary: Crea una nueva vacación
+      tags: [Vacacion]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VacacionRequest"
+      responses:
+        "201":
+          description: Vacación creada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VacacionResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/vacaciones/{id}:
+    get:
+      operationId: obtenerVacacion
+      summary: Obtiene una vacación por ID
+      tags: [Vacacion]
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "200":
+          description: Vacación encontrada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VacacionResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      operationId: actualizarVacacion
+      summary: Actualiza una vacación
+      tags: [Vacacion]
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VacacionRequest"
+      responses:
+        "200":
+          description: Vacación actualizada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VacacionResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      operationId: eliminarVacacion
+      summary: Elimina una vacación
+      tags: [Vacacion]
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "204":
+          description: Vacación eliminada
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/squads/{squadId}/vacaciones:
+    get:
+      operationId: listarVacionesPorSquad
+      summary: Lista vacaciones de un squad en un período
+      tags: [Vacacion]
+      parameters:
+        - name: squadId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: fechaInicio
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: fechaFin
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: Vacaciones del squad
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/VacacionResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ═══════════════════════════════════════════════
+  # AUSENCIAS
+  # ═══════════════════════════════════════════════
+  /api/v1/ausencias:
+    get:
+      operationId: listarAusencias
+      summary: Lista ausencias con filtros opcionales
+      tags: [Ausencia]
+      parameters:
+        - name: personaId
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int64
+        - name: squadId
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int64
+        - name: tipo
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [BAJA_MEDICA, EMERGENCIA, OTRO]
+        - name: fechaInicio
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: fechaFin
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: Lista de ausencias
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AusenciaResponse"
+        "500":
+          $ref: "#/components/responses/InternalError"
+    post:
+      operationId: crearAusencia
+      summary: Crea una nueva ausencia
+      tags: [Ausencia]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AusenciaRequest"
+      responses:
+        "201":
+          description: Ausencia creada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AusenciaResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/ausencias/{id}:
+    get:
+      operationId: obtenerAusencia
+      summary: Obtiene una ausencia por ID
+      tags: [Ausencia]
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "200":
+          description: Ausencia encontrada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AusenciaResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      operationId: actualizarAusencia
+      summary: Actualiza una ausencia
+      tags: [Ausencia]
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AusenciaRequest"
+      responses:
+        "200":
+          description: Ausencia actualizada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AusenciaResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      operationId: eliminar Ausencia
+      summary: Elimina una ausencia
+      tags: [Ausencia]
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "204":
+          description: Ausencia eliminada
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/squads/{squadId}/ausencias:
+    get:
+      operationId: listarAusenciasPorSquad
+      summary: Lista ausencias de un squad en un período
+      tags: [Ausencia]
+      parameters:
+        - name: squadId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: fechaInicio
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: fechaFin
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: Ausencias del squad
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AusenciaResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ═══════════════════════════════════════════════
+  # CAPACIDAD
+  # ═══════════════════════════════════════════════
+  /api/v1/capacidad/squad/{squadId}:
+    get:
+      operationId: calcularCapacidadSquad
+      summary: Calcula capacidad disponible del squad en un período
+      description: |
+        Calcula la capacidad disponible del squad considerando:
+        - Horas del perfil horario de cada persona
+        - Porcentaje de dedicación al squad
+        - Festivos asignados a cada persona
+        - Vacaciones en el período
+        - Ausencias en el período
+        - Fines de semana (0h)
+      tags: [Capacidad]
+      parameters:
+        - name: squadId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: fechaInicio
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+          description: Fecha inicio del período
+        - name: fechaFin
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+          description: Fecha fin del período
+      responses:
+        "200":
+          description: Capacidad calculada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CapacidadSquadResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
 # ═══════════════════════════════════════════════
 # COMPONENTS
 # ═══════════════════════════════════════════════
@@ -899,6 +1457,315 @@ components:
         updatedAt:
           type: string
           format: date-time
+
+    # --- FESTIVO ---
+    FestivoRequest:
+      type: object
+      required: [fecha, descripcion, tipo, personaIds]
+      properties:
+        fecha:
+          type: string
+          format: date
+          description: Fecha del festivo
+          example: "2026-01-01"
+        descripcion:
+          type: string
+          maxLength: 200
+          description: Descripción del festivo
+          example: "Año Nuevo"
+        tipo:
+          type: string
+          enum: [NACIONAL, REGIONAL, LOCAL]
+          description: Tipo de festivo
+        personaIds:
+          type: array
+          items:
+            type: integer
+            format: int64
+          description: IDs de personas a las que aplica el festivo
+          minItems: 1
+
+    FestivoResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        fecha:
+          type: string
+          format: date
+        descripcion:
+          type: string
+        tipo:
+          type: string
+          enum: [NACIONAL, REGIONAL, LOCAL]
+        personas:
+          type: array
+          items:
+            $ref: "#/components/schemas/PersonaBasicInfo"
+          description: Personas a las que aplica
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    PersonaBasicInfo:
+      type: object
+      description: Información básica de una persona (para referencias)
+      properties:
+        id:
+          type: integer
+          format: int64
+        nombre:
+          type: string
+        email:
+          type: string
+
+    FestivoCsvUploadResponse:
+      type: object
+      description: Resumen de carga masiva de festivos
+      properties:
+        totalProcesados:
+          type: integer
+          description: Total de filas procesadas
+        exitosos:
+          type: integer
+          description: Festivos creados exitosamente
+        errores:
+          type: integer
+          description: Número de errores
+        detalleErrores:
+          type: array
+          items:
+            $ref: "#/components/schemas/FestivoCsvError"
+
+    FestivoCsvError:
+      type: object
+      properties:
+        fila:
+          type: integer
+          description: Número de fila con error (1-based)
+        mensaje:
+          type: string
+          description: Descripción del error
+
+    # --- VACACION ---
+    VacacionRequest:
+      type: object
+      required: [personaId, fechaInicio, fechaFin, tipo, estado]
+      properties:
+        personaId:
+          type: integer
+          format: int64
+          description: ID de la persona
+        fechaInicio:
+          type: string
+          format: date
+          description: Fecha inicio de vacaciones
+          example: "2026-03-01"
+        fechaFin:
+          type: string
+          format: date
+          description: Fecha fin de vacaciones (inclusive)
+          example: "2026-03-05"
+        tipo:
+          type: string
+          enum: [VACACIONES, ASUNTOS_PROPIOS, LIBRE_DISPOSICION, PERMISO]
+          description: Tipo de vacación
+        estado:
+          type: string
+          enum: [SOLICITADA, REGISTRADA]
+          description: Estado actual
+        comentario:
+          type: string
+          maxLength: 500
+          description: Comentario adicional
+
+    VacacionResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        personaId:
+          type: integer
+          format: int64
+        personaNombre:
+          type: string
+          description: Nombre de la persona
+        fechaInicio:
+          type: string
+          format: date
+        fechaFin:
+          type: string
+          format: date
+        diasLaborables:
+          type: integer
+          description: Días laborables (excluye fines de semana)
+        tipo:
+          type: string
+          enum: [VACACIONES, ASUNTOS_PROPIOS, LIBRE_DISPOSICION, PERMISO]
+        estado:
+          type: string
+          enum: [SOLICITADA, REGISTRADA]
+        comentario:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    # --- AUSENCIA ---
+    AusenciaRequest:
+      type: object
+      required: [personaId, fechaInicio, tipo]
+      properties:
+        personaId:
+          type: integer
+          format: int64
+          description: ID de la persona
+        fechaInicio:
+          type: string
+          format: date
+          description: Fecha inicio de ausencia
+          example: "2026-04-10"
+        fechaFin:
+          type: string
+          format: date
+          description: Fecha fin (null = duración desconocida)
+          nullable: true
+        tipo:
+          type: string
+          enum: [BAJA_MEDICA, EMERGENCIA, OTRO]
+          description: Tipo de ausencia
+        comentario:
+          type: string
+          maxLength: 500
+          description: Comentario adicional
+
+    AusenciaResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        personaId:
+          type: integer
+          format: int64
+        personaNombre:
+          type: string
+          description: Nombre de la persona
+        fechaInicio:
+          type: string
+          format: date
+        fechaFin:
+          type: string
+          format: date
+          nullable: true
+        tipo:
+          type: string
+          enum: [BAJA_MEDICA, EMERGENCIA, OTRO]
+        comentario:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    # --- CAPACIDAD ---
+    CapacidadSquadResponse:
+      type: object
+      description: Capacidad disponible de un squad
+      properties:
+        squadId:
+          type: integer
+          format: int64
+        squadNombre:
+          type: string
+        fechaInicio:
+          type: string
+          format: date
+        fechaFin:
+          type: string
+          format: date
+        horasTotales:
+          type: number
+          format: double
+          description: Horas totales disponibles del squad
+        diasLaborables:
+          type: integer
+          description: Días laborables en el período
+        personas:
+          type: array
+          items:
+            $ref: "#/components/schemas/CapacidadPersonaResponse"
+          description: Capacidad por persona
+
+    CapacidadPersonaResponse:
+      type: object
+      description: Capacidad disponible de una persona en un período
+      properties:
+        personaId:
+          type: integer
+          format: int64
+        personaNombre:
+          type: string
+        porcentajeDedicacion:
+          type: integer
+          description: Porcentaje de dedicación al squad
+        horasDisponibles:
+          type: number
+          format: double
+          description: Horas reales disponibles (con reducciones)
+        horasTeoricasMaximas:
+          type: number
+          format: double
+          description: Horas máximas teóricas (sin reducciones)
+        diasDisponibles:
+          type: integer
+          description: Días con horas disponibles
+        diasReducidos:
+          type: integer
+          description: Días con festivos/vacaciones/ausencias
+        porcentajeCapacidad:
+          type: number
+          format: double
+          description: "% de capacidad (horasDisponibles / horasTeoricasMaximas)"
+        detalles:
+          type: array
+          items:
+            $ref: "#/components/schemas/CapacidadDiaResponse"
+          description: Detalle día a día
+
+    CapacidadDiaResponse:
+      type: object
+      description: Capacidad de un día específico
+      properties:
+        fecha:
+          type: string
+          format: date
+        diaSemana:
+          type: string
+          description: Nombre del día (LUNES, MARTES, etc.)
+        horasDisponibles:
+          type: number
+          format: double
+          description: Horas disponibles ese día
+        horasTeoricas:
+          type: number
+          format: double
+          description: Horas del perfil horario (sin reducciones)
+        motivoReduccion:
+          type: string
+          enum: [FESTIVO, VACACION, AUSENCIA, FIN_SEMANA]
+          nullable: true
+          description: Motivo si hay reducción a 0 horas
 
     # --- ERROR ---
     ErrorResponse:

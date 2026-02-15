@@ -11,3 +11,13 @@ databaseChangeLog:
       file: db/changelog/005-create-squad-member.sql
   - include:
       file: db/changelog/006-seed-squads-personas.sql
+
+  # ── BLOQUE 2: Calendario ──────────────────────
+  - include:
+      file: db/changelog/007-create-festivo.sql
+  - include:
+      file: db/changelog/008-create-vacacion.sql
+  - include:
+      file: db/changelog/009-create-ausencia.sql
+  - include:
+      file: db/changelog/010-seed-festivos.sql

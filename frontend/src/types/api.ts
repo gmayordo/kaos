@@ -158,3 +158,122 @@ export interface SquadMemberRequest {
   fechaInicio?: string;
   fechaFin?: string;
 }
+
+// ============= Festivo =============
+
+export type TipoFestivo = "NACIONAL" | "REGIONAL" | "LOCAL";
+
+export interface FestivoResponse {
+  id: number;
+  fecha: string;
+  descripcion: string;
+  tipo: TipoFestivo;
+  personaIds: number[];
+  cantidadPersonas: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface FestivoRequest {
+  fecha: string;
+  descripcion: string;
+  tipo: TipoFestivo;
+  personaIds: number[];
+}
+
+export interface FestivoCsvUploadResponse {
+  procesadas: number;
+  exitosas: number;
+  errores: FestivoCsvError[];
+}
+
+export interface FestivoCsvError {
+  fila: number;
+  mensaje: string;
+}
+
+// ============= Vacacion =============
+
+export type TipoVacacion =
+  | "VACACIONES"
+  | "ASUNTOS_PROPIOS"
+  | "LIBRE_DISPOSICION"
+  | "PERMISO";
+export type EstadoVacacion = "SOLICITADA" | "REGISTRADA";
+
+export interface VacacionResponse {
+  id: number;
+  personaId: number;
+  personaNombre: string;
+  fechaInicio: string;
+  fechaFin: string;
+  tipo: TipoVacacion;
+  estado: EstadoVacacion;
+  comentario?: string;
+  dias: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface VacacionRequest {
+  personaId: number;
+  fechaInicio: string;
+  fechaFin: string;
+  tipo: TipoVacacion;
+  estado?: EstadoVacacion;
+  comentario?: string;
+}
+
+// ============= Ausencia =============
+
+export type TipoAusencia = "BAJA_MEDICA" | "EMERGENCIA" | "OTRO";
+
+export interface AusenciaResponse {
+  id: number;
+  personaId: number;
+  personaNombre: string;
+  fechaInicio: string;
+  fechaFin?: string;
+  tipo: TipoAusencia;
+  comentario?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AusenciaRequest {
+  personaId: number;
+  fechaInicio: string;
+  fechaFin?: string;
+  tipo: TipoAusencia;
+  comentario?: string;
+}
+
+// ============= Capacidad =============
+
+export interface CapacidadDiaResponse {
+  fecha: string;
+  horasDisponibles: number;
+  horasTeoricas: number;
+  motivoReduccion?: string;
+}
+
+export interface CapacidadPersonaResponse {
+  personaId: number;
+  personaNombre: string;
+  horasDisponibles: number;
+  horasTeoricas: number;
+  porcentajeCapacidad: number;
+  diasDisponibles: number;
+  diasReducidos: number;
+  detalles: CapacidadDiaResponse[];
+}
+
+export interface CapacidadSquadResponse {
+  squadId: number;
+  squadNombre: string;
+  fechaInicio: string;
+  fechaFin: string;
+  horasTotales: number;
+  diasLaborables: number;
+  personas: CapacidadPersonaResponse[];
+}
