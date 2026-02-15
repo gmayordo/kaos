@@ -82,12 +82,12 @@ Proxy automático: las peticiones a `/api/` se redirigen al backend en `:8080`.
 
 Los scripts de Liquibase cargan datos reales desde `equipos.yaml`:
 
-| Entidad       | Cantidad | Detalle                                                      |
-| ------------- | -------- | ------------------------------------------------------------ |
-| PerfilHorario | 2        | España (Europe/Madrid), Chile (America/Santiago)             |
-| Squad         | 3        | red (22517), green (22516), blue (22515)                     |
-| Persona       | 17       | Nombres, emails y Jira IDs reales                            |
-| SquadMember   | 19       | Luis Galván como SM en 3 squads (33%+33%+34%), resto al 100% |
+| Entidad       | Cantidad | Detalle                                                     |
+| ------------- | -------- | ----------------------------------------------------------- |
+| PerfilHorario | 2        | España (Europe/Madrid), Chile (America/Santiago)            |
+| Squad         | 3        | red (22517), green (22516), blue (22515)                    |
+| Persona       | 17       | Nombres, emails y Jira IDs reales                           |
+| SquadMember   | 19       | Juan Perez como SM en 3 squads (33%+33%+34%), resto al 100% |
 
 ## Endpoints principales
 
