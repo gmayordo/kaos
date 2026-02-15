@@ -1,0 +1,49 @@
+<svg viewBox="0 0 200 280" xmlns="http://www.w3.org/2000/svg">
+  <!-- Escudo exterior -->
+  <path d="M 100 10 L 160 50 L 160 140 Q 160 200 100 260 Q 40 200 40 140 L 40 50 Z" 
+        fill="none" stroke="#000" stroke-width="4" stroke-linejoin="round"/>
+  
+  <!-- Relleno degradado del escudo -->
+  <defs>
+    <linearGradient id="escudoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a1a1a;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#000;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <path d="M 100 10 L 160 50 L 160 140 Q 160 200 100 260 Q 40 200 40 140 L 40 50 Z" 
+        fill="url(#escudoGrad)"/>
+  
+  <!-- Alas del águila (lado izquierdo) -->
+  <path d="M 85 80 Q 60 65 50 90 Q 48 100 60 110 Q 80 95 85 85" 
+        fill="#999" stroke="#666" stroke-width="1"/>
+  
+  <!-- Alas del águila (lado derecho) -->
+  <path d="M 115 80 Q 140 65 150 90 Q 152 100 140 110 Q 120 95 115 85" 
+        fill="#999" stroke="#666" stroke-width="1"/>
+  
+  <!-- Cabeza del águila -->
+  <circle cx="100" cy="75" r="12" fill="#666" stroke="#333" stroke-width="1"/>
+  
+  <!-- Pico -->
+  <path d="M 108 75 L 125 70 L 108 80 Z" fill="#CC3333" stroke="#990000" stroke-width="0.5"/>
+  
+  <!-- Ojo -->
+  <circle cx="105" cy="72" r="2" fill="#FFD700"/>
+  
+  <!-- Texto KAOS -->
+  <text x="100" y="135" font-family="Arial, sans-serif" font-size="28" font-weight="bold" 
+        text-anchor="middle" fill="#DD3333" stroke="#990000" stroke-width="0.5">KAOS</text>
+  
+  <!-- Globo terrestre -->
+  <circle cx="100" cy="185" r="20" fill="#00AA00" stroke="#005500" stroke-width="1"/>
+  
+  <!-- Líneas del globo (meridianos) -->
+  <line x1="100" y1="165" x2="100" y2="205" stroke="#006600" stroke-width="0.5"/>
+  <path d="M 85 185 Q 100 180 115 185" stroke="#006600" fill="none" stroke-width="0.5"/>
+  <path d="M 85 185 Q 100 190 115 185" stroke="#006600" fill="none" stroke-width="0.5"/>
+  
+  <!-- Detalles de continentes (simplificado) -->
+  <circle cx="95" cy="180" r="2" fill="#004400"/>
+  <circle cx="110" cy="190" r="1.5" fill="#004400"/>
+</svg>

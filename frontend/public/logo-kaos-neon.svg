@@ -1,0 +1,50 @@
+<svg viewBox="0 0 200 280" xmlns="http://www.w3.org/2000/svg">
+  <!-- Escudo con colores neón -->
+  <defs>
+    <linearGradient id="neonGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#00FFFF;stop-opacity:0.3" />
+      <stop offset="100%" style="stop-color:#FF00FF;stop-opacity:0.3" />
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Fondo escudo -->
+  <path d="M 100 15 L 158 48 L 158 138 Q 158 195 100 258 Q 42 195 42 138 L 42 48 Z" 
+        fill="url(#neonGrad)" stroke="#00FFFF" stroke-width="2" filter="url(#glow)"/>
+  
+  <!-- Águila con colores alternativos -->
+  <!-- Ala izquierda -->
+  <path d="M 85 80 Q 55 65 45 95 Q 43 110 65 115 Q 85 98 85 85" 
+        fill="#FF6EC7" stroke="#FF00FF" stroke-width="1" filter="url(#glow)"/>
+  
+  <!-- Ala derecha -->
+  <path d="M 115 80 Q 145 65 155 95 Q 157 110 135 115 Q 115 98 115 85" 
+        fill="#FF6EC7" stroke="#FF00FF" stroke-width="1" filter="url(#glow)"/>
+  
+  <!-- Cuerpo águila -->
+  <circle cx="100" cy="75" r="13" fill="#00FFFF" stroke="#00FF00" stroke-width="1" filter="url(#glow)"/>
+  
+  <!-- Pico neón -->
+  <path d="M 109 75 L 128 70 L 109 82 Z" fill="#FFFF00" stroke="#FF00FF" stroke-width="0.5" filter="url(#glow)"/>
+  
+  <!-- Ojo brillante -->
+  <circle cx="105" cy="72" r="2.5" fill="#FFFFFF" filter="url(#glow)"/>
+  
+  <!-- KAOS en neón -->
+  <text x="100" y="140" font-family="Arial, sans-serif" font-size="30" font-weight="bold" 
+        text-anchor="middle" fill="#00FF00" stroke="#00FFFF" stroke-width="1" filter="url(#glow)">KAOS</text>
+  
+  <!-- Globo neón -->
+  <circle cx="100" cy="185" r="20" fill="none" stroke="#00FFFF" stroke-width="2" filter="url(#glow)"/>
+  <circle cx="100" cy="185" r="16" fill="none" stroke="#FF00FF" stroke-width="1" filter="url(#glow)"/>
+  
+  <!-- Contenidos del globo -->
+  <circle cx="95" cy="180" r="3" fill="#00FF00" filter="url(#glow)"/>
+  <circle cx="110" cy="190" r="2" fill="#FFFF00" filter="url(#glow)"/>
+</svg>

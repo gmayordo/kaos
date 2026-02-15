@@ -1,0 +1,919 @@
+openapi: 3.0.3
+info:
+  title: KAOS API
+  description: API de la Plataforma de Gestión de Equipos de Desarrollo
+  version: 1.0.0
+  contact:
+    name: Equipo KAOS
+    email: kaos@ehcos.com
+
+servers:
+  - url: http://localhost:8080
+    description: Desarrollo local
+
+tags:
+  - name: PerfilHorario
+    description: Gestión de perfiles de horario laboral
+  - name: Squad
+    description: Gestión de equipos de desarrollo (squads)
+  - name: Persona
+    description: Gestión de miembros del equipo
+  - name: SquadMember
+    description: Gestión de asignaciones persona-squad (dedicación)
+
+paths:
+  # ═══════════════════════════════════════════════
+  # PERFILES DE HORARIO
+  # ═══════════════════════════════════════════════
+  /api/v1/perfiles-horario:
+    get:
+      operationId: listarPerfilesHorario
+      summary: Lista todos los perfiles de horario
+      description: Devuelve todos los perfiles de horario configurados en el sistema.
+      tags: [PerfilHorario]
+      responses:
+        "200":
+          description: Lista de perfiles de horario
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PerfilHorarioResponse"
+        "500":
+          $ref: "#/components/responses/InternalError"
+    post:
+      operationId: crearPerfilHorario
+      summary: Crea un nuevo perfil de horario
+      tags: [PerfilHorario]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PerfilHorarioRequest"
+            example:
+              nombre: "España"
+              zonaHoraria: "Europe/Madrid"
+              horasLunes: 8.5
+              horasMartes: 8.5
+              horasMiercoles: 8.5
+              horasJueves: 8.5
+              horasViernes: 7.0
+      responses:
+        "201":
+          description: Perfil de horario creado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PerfilHorarioResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/perfiles-horario/{id}:
+    get:
+      operationId: obtenerPerfilHorario
+      summary: Obtiene un perfil de horario por ID
+      tags: [PerfilHorario]
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "200":
+          description: Perfil de horario encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PerfilHorarioResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      operationId: actualizarPerfilHorario
+      summary: Actualiza un perfil de horario
+      tags: [PerfilHorario]
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PerfilHorarioRequest"
+      responses:
+        "200":
+          description: Perfil de horario actualizado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PerfilHorarioResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      operationId: eliminarPerfilHorario
+      summary: Elimina un perfil de horario
+      description: Solo se puede eliminar si no tiene personas asignadas.
+      tags: [PerfilHorario]
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "204":
+          description: Perfil de horario eliminado
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ═══════════════════════════════════════════════
+  # SQUADS
+  # ═══════════════════════════════════════════════
+  /api/v1/squads:
+    get:
+      operationId: listarSquads
+      summary: Lista squads con filtro opcional por estado
+      tags: [Squad]
+      parameters:
+        - name: estado
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [ACTIVO, INACTIVO]
+          description: Filtrar por estado del squad
+      responses:
+        "200":
+          description: Lista de squads
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SquadResponse"
+        "500":
+          $ref: "#/components/responses/InternalError"
+    post:
+      operationId: crearSquad
+      summary: Crea un nuevo squad
+      tags: [Squad]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SquadRequest"
+            example:
+              nombre: "red"
+              descripcion: "Squad Red — Correctivos y evolutivos"
+              idSquadCorrJira: "CORR-RED"
+              idSquadEvolJira: "EVOL-RED"
+      responses:
+        "201":
+          description: Squad creado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SquadResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/squads/{id}:
+    get:
+      operationId: obtenerSquad
+      summary: Obtiene un squad por ID
+      tags: [Squad]
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "200":
+          description: Squad encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SquadResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      operationId: actualizarSquad
+      summary: Actualiza un squad
+      tags: [Squad]
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SquadRequest"
+      responses:
+        "200":
+          description: Squad actualizado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SquadResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/squads/{id}/desactivar:
+    patch:
+      operationId: desactivarSquad
+      summary: Desactiva un squad (soft delete)
+      description: Cambia el estado del squad a INACTIVO. No se permite si tiene sprints activos.
+      tags: [Squad]
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "200":
+          description: Squad desactivado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SquadResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ═══════════════════════════════════════════════
+  # PERSONAS
+  # ═══════════════════════════════════════════════
+  /api/v1/personas:
+    get:
+      operationId: listarPersonas
+      summary: Lista personas con paginación y filtros
+      description: Devuelve lista paginada de personas. Filtrable por squad, rol, seniority, ubicación y estado.
+      tags: [Persona]
+      parameters:
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/SizeParam"
+        - $ref: "#/components/parameters/SortParam"
+        - name: squadId
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int64
+          description: Filtrar por squad (ID)
+        - name: rol
+          in: query
+          required: false
+          schema:
+            type: string
+            enum:
+              [
+                LIDER_TECNICO,
+                LIDER_FUNCIONAL,
+                FRONTEND,
+                BACKEND,
+                QA,
+                SCRUM_MASTER,
+              ]
+          description: Filtrar por rol en squad
+        - name: seniority
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [JUNIOR, MID, SENIOR, LEAD]
+          description: Filtrar por seniority
+        - name: ubicacion
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Filtrar por zona horaria (parcial, ej. 'Madrid')
+        - name: activo
+          in: query
+          required: false
+          schema:
+            type: boolean
+          description: Filtrar por estado activo/inactivo
+      responses:
+        "200":
+          description: Página de personas
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PagePersonaResponse"
+        "500":
+          $ref: "#/components/responses/InternalError"
+    post:
+      operationId: crearPersona
+      summary: Crea una nueva persona
+      tags: [Persona]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PersonaRequest"
+            example:
+              nombre: "Gerardo Mayordomo"
+              email: "gmayordo@ehcos.com"
+              idJira: "gmayordo"
+              perfilHorarioId: 1
+              seniority: "LEAD"
+              skills: "Java,Spring Boot,React"
+              costeHora: 45.00
+              fechaIncorporacion: "2020-01-15"
+              sendNotifications: true
+      responses:
+        "201":
+          description: Persona creada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PersonaResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/personas/{id}:
+    get:
+      operationId: obtenerPersona
+      summary: Obtiene una persona por ID
+      tags: [Persona]
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "200":
+          description: Persona encontrada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PersonaResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    put:
+      operationId: actualizarPersona
+      summary: Actualiza una persona
+      tags: [Persona]
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PersonaRequest"
+      responses:
+        "200":
+          description: Persona actualizada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PersonaResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/personas/{id}/desactivar:
+    patch:
+      operationId: desactivarPersona
+      summary: Desactiva una persona (soft delete)
+      tags: [Persona]
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "200":
+          description: Persona desactivada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PersonaResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ═══════════════════════════════════════════════
+  # SQUAD MEMBERS (DEDICACIÓN)
+  # ═══════════════════════════════════════════════
+  /api/v1/squads/{squadId}/miembros:
+    get:
+      operationId: listarMiembrosSquad
+      summary: Lista miembros de un squad
+      tags: [SquadMember]
+      parameters:
+        - name: squadId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: ID del squad
+      responses:
+        "200":
+          description: Lista de miembros del squad
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SquadMemberResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/personas/{personaId}/squads:
+    get:
+      operationId: listarSquadsDePersona
+      summary: Lista squads a los que pertenece una persona
+      tags: [SquadMember]
+      parameters:
+        - name: personaId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: ID de la persona
+      responses:
+        "200":
+          description: Lista de asignaciones de la persona
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SquadMemberResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/squad-members:
+    post:
+      operationId: asignarPersonaASquad
+      summary: Asigna una persona a un squad con rol y porcentaje
+      tags: [SquadMember]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SquadMemberRequest"
+            example:
+              personaId: 1
+              squadId: 1
+              rol: "BACKEND"
+              porcentaje: 100
+              fechaInicio: "2026-02-01"
+      responses:
+        "201":
+          description: Asignación creada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SquadMemberResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/squad-members/{id}:
+    put:
+      operationId: actualizarDedicacion
+      summary: Modifica rol o porcentaje de dedicación
+      tags: [SquadMember]
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SquadMemberRequest"
+      responses:
+        "200":
+          description: Dedicación actualizada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SquadMemberResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      operationId: eliminarDedicacion
+      summary: Elimina asignación de persona a squad
+      tags: [SquadMember]
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "204":
+          description: Asignación eliminada
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+# ═══════════════════════════════════════════════
+# COMPONENTS
+# ═══════════════════════════════════════════════
+components:
+  parameters:
+    IdParam:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int64
+      description: Identificador del recurso
+    PageParam:
+      name: page
+      in: query
+      required: false
+      schema:
+        type: integer
+        default: 0
+        minimum: 0
+      description: Número de página (0-based)
+    SizeParam:
+      name: size
+      in: query
+      required: false
+      schema:
+        type: integer
+        default: 20
+        minimum: 1
+        maximum: 100
+      description: Tamaño de página
+    SortParam:
+      name: sort
+      in: query
+      required: false
+      schema:
+        type: string
+      description: Campo de ordenación (campo,asc|desc)
+
+  responses:
+    BadRequest:
+      description: Datos de entrada inválidos
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    NotFound:
+      description: Recurso no encontrado
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    InternalError:
+      description: Error interno del servidor
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+  schemas:
+    # --- PERFIL HORARIO ---
+    PerfilHorarioRequest:
+      type: object
+      required:
+        [
+          nombre,
+          zonaHoraria,
+          horasLunes,
+          horasMartes,
+          horasMiercoles,
+          horasJueves,
+          horasViernes,
+        ]
+      properties:
+        nombre:
+          type: string
+          description: Nombre del perfil (ej. España, Chile)
+          maxLength: 100
+          example: "España"
+        zonaHoraria:
+          type: string
+          description: Timezone IANA (ej. Europe/Madrid)
+          maxLength: 50
+          example: "Europe/Madrid"
+        horasLunes:
+          type: number
+          format: double
+          description: Horas laborables lunes
+          example: 8.5
+        horasMartes:
+          type: number
+          format: double
+          description: Horas laborables martes
+          example: 8.5
+        horasMiercoles:
+          type: number
+          format: double
+          description: Horas laborables miércoles
+          example: 8.5
+        horasJueves:
+          type: number
+          format: double
+          description: Horas laborables jueves
+          example: 8.5
+        horasViernes:
+          type: number
+          format: double
+          description: Horas laborables viernes
+          example: 7.0
+
+    PerfilHorarioResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        nombre:
+          type: string
+        zonaHoraria:
+          type: string
+        horasLunes:
+          type: number
+          format: double
+        horasMartes:
+          type: number
+          format: double
+        horasMiercoles:
+          type: number
+          format: double
+        horasJueves:
+          type: number
+          format: double
+        horasViernes:
+          type: number
+          format: double
+        totalSemanal:
+          type: number
+          format: double
+          description: Total calculado (sum L-V)
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    # --- SQUAD ---
+    SquadRequest:
+      type: object
+      required: [nombre]
+      properties:
+        nombre:
+          type: string
+          description: Nombre del squad
+          maxLength: 100
+          example: "red"
+        descripcion:
+          type: string
+          description: Descripción del squad
+          example: "Squad Red"
+        idSquadCorrJira:
+          type: string
+          description: ID del board de correctivos en Jira
+          maxLength: 100
+          example: "CORR-RED"
+        idSquadEvolJira:
+          type: string
+          description: ID del board de evolutivos en Jira
+          maxLength: 100
+          example: "EVOL-RED"
+
+    SquadResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        nombre:
+          type: string
+        descripcion:
+          type: string
+        estado:
+          type: string
+          enum: [ACTIVO, INACTIVO]
+        idSquadCorrJira:
+          type: string
+        idSquadEvolJira:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    # --- PERSONA ---
+    PersonaRequest:
+      type: object
+      required: [nombre, email, perfilHorarioId]
+      properties:
+        nombre:
+          type: string
+          description: Nombre completo
+          maxLength: 200
+          example: "Gerardo Mayordomo"
+        email:
+          type: string
+          format: email
+          description: Email corporativo (único)
+          maxLength: 200
+          example: "gmayordo@ehcos.com"
+        idJira:
+          type: string
+          description: Usuario Jira
+          maxLength: 100
+          example: "gmayordo"
+        perfilHorarioId:
+          type: integer
+          format: int64
+          description: ID del perfil de horario asignado
+        seniority:
+          type: string
+          enum: [JUNIOR, MID, SENIOR, LEAD]
+          description: Nivel de seniority
+        skills:
+          type: string
+          description: Skills separadas por coma
+          example: "Java,Spring Boot,React"
+        costeHora:
+          type: number
+          format: double
+          description: Coste por hora (opcional)
+        fechaIncorporacion:
+          type: string
+          format: date
+          description: Fecha de incorporación
+        sendNotifications:
+          type: boolean
+          description: Flag para envío de notificaciones
+          default: true
+
+    PersonaResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        nombre:
+          type: string
+        email:
+          type: string
+        idJira:
+          type: string
+        perfilHorarioId:
+          type: integer
+          format: int64
+        perfilHorarioNombre:
+          type: string
+          description: Nombre del perfil de horario
+        seniority:
+          type: string
+          enum: [JUNIOR, MID, SENIOR, LEAD]
+        skills:
+          type: string
+        costeHora:
+          type: number
+          format: double
+        activo:
+          type: boolean
+        fechaIncorporacion:
+          type: string
+          format: date
+        sendNotifications:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    PagePersonaResponse:
+      type: object
+      description: Respuesta paginada de personas
+      properties:
+        content:
+          type: array
+          items:
+            $ref: "#/components/schemas/PersonaResponse"
+        totalElements:
+          type: integer
+          format: int64
+        totalPages:
+          type: integer
+        number:
+          type: integer
+          description: Número de página actual (0-based)
+        size:
+          type: integer
+          description: Tamaño de página
+
+    # --- SQUAD MEMBER ---
+    SquadMemberRequest:
+      type: object
+      required: [personaId, squadId, rol, porcentaje, fechaInicio]
+      properties:
+        personaId:
+          type: integer
+          format: int64
+          description: ID de la persona
+        squadId:
+          type: integer
+          format: int64
+          description: ID del squad
+        rol:
+          type: string
+          enum:
+            [
+              LIDER_TECNICO,
+              LIDER_FUNCIONAL,
+              FRONTEND,
+              BACKEND,
+              QA,
+              SCRUM_MASTER,
+            ]
+          description: Rol en el squad
+        porcentaje:
+          type: integer
+          minimum: 0
+          maximum: 100
+          description: Porcentaje de dedicación al squad
+          example: 100
+        fechaInicio:
+          type: string
+          format: date
+          description: Fecha inicio de la asignación
+        fechaFin:
+          type: string
+          format: date
+          description: Fecha fin (null = indefinido)
+
+    SquadMemberResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        personaId:
+          type: integer
+          format: int64
+        personaNombre:
+          type: string
+          description: Nombre de la persona
+        squadId:
+          type: integer
+          format: int64
+        squadNombre:
+          type: string
+          description: Nombre del squad
+        rol:
+          type: string
+          enum:
+            [
+              LIDER_TECNICO,
+              LIDER_FUNCIONAL,
+              FRONTEND,
+              BACKEND,
+              QA,
+              SCRUM_MASTER,
+            ]
+        porcentaje:
+          type: integer
+        fechaInicio:
+          type: string
+          format: date
+        fechaFin:
+          type: string
+          format: date
+        capacidadDiariaLunes:
+          type: number
+          format: double
+          description: Capacidad diaria calculada (horas_perfil × porcentaje / 100)
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    # --- ERROR ---
+    ErrorResponse:
+      type: object
+      properties:
+        code:
+          type: string
+          example: "NOT_FOUND"
+        message:
+          type: string
+          example: "Recurso no encontrado"
+        details:
+          type: array
+          items:
+            type: string
+        timestamp:
+          type: string
+          format: date-time

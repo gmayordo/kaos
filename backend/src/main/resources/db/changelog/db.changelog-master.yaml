@@ -1,0 +1,13 @@
+databaseChangeLog:
+  - include:
+      file: db/changelog/001-create-perfil-horario.sql
+  - include:
+      file: db/changelog/002-seed-perfiles-horario.sql
+  - include:
+      file: db/changelog/003-create-squad.sql
+  - include:
+      file: db/changelog/004-create-persona.sql
+  - include:
+      file: db/changelog/005-create-squad-member.sql
+  - include:
+      file: db/changelog/006-seed-squads-personas.sql

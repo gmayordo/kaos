@@ -1,0 +1,18 @@
+# Perfil para Docker Compose — conecta al PostgreSQL de dockerconf (ehcos-network)
+spring:
+  datasource:
+    url: jdbc:postgresql://postgres-container:5432/${DB_NAME:kaosdb}
+    username: ${DB_USER:postgres}
+    password: ${DB_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+logging:
+  level:
+    com.kaos: INFO

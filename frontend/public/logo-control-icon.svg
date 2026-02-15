@@ -1,0 +1,32 @@
+<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <!-- Icono CONTROL minimalista para favicons -->
+  <defs>
+    <linearGradient id="iconGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1E3A8A;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#000;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Fondo redondo -->
+  <circle cx="50" cy="50" r="48" fill="url(#iconGrad)" stroke="#FFF" stroke-width="2"/>
+  
+  <!-- Símbolo de engranaje/control -->
+  <g transform="translate(50, 45)">
+    <circle cx="0" cy="0" r="8" fill="none" stroke="#FFF" stroke-width="1.5"/>
+    <!-- Dientes del engranaje -->
+    <rect x="-1" y="-14" width="2" height="6" fill="#FFF"/>
+    <rect x="-1" y="8" width="2" height="6" fill="#FFF"/>
+    <rect x="-14" y="-1" width="6" height="2" fill="#FFF"/>
+    <rect x="8" y="-1" width="6" height="2" fill="#FFF"/>
+    <!-- Centro -->
+    <circle cx="0" cy="0" r="2.5" fill="#00D084"/>
+  </g>
+  
+  <!-- Línea horizontal de control -->
+  <line x1="25" y1="70" x2="75" y2="70" stroke="#FFF" stroke-width="1.5"/>
+  
+  <!-- Puntos de monitoreo -->
+  <circle cx="35" cy="70" r="1.5" fill="#00D084"/>
+  <circle cx="50" cy="70" r="1.5" fill="#00D084"/>
+  <circle cx="65" cy="70" r="1.5" fill="#00D084"/>
+</svg>

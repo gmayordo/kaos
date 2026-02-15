@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  <!-- Fondo circular azul oscuro -->
+  <circle cx="60" cy="60" r="58" fill="#0f172a" stroke="#3b82f6" stroke-width="4"/>
+  <!-- Anillo intermedio -->
+  <circle cx="60" cy="60" r="48" fill="none" stroke="#3b82f6" stroke-width="1.5" opacity="0.6"/>
+  <!-- Escudo estilizado -->
+  <path d="M60 20 L85 35 L85 60 Q85 85 60 100 Q35 85 35 60 L35 35 Z" fill="none" stroke="#3b82f6" stroke-width="2.5"/>
+  <path d="M60 28 L80 40 L80 58 Q80 80 60 93 Q40 80 40 58 L40 40 Z" fill="#3b82f6" opacity="0.15"/>
+  <!-- Águila/estrella central -->
+  <polygon points="60,38 63,50 76,50 66,57 69,69 60,62 51,69 54,57 44,50 57,50" fill="#3b82f6"/>
+  <!-- Texto CONTROL -->
+  <text x="60" y="108" text-anchor="middle" font-family="Arial, sans-serif" font-weight="700" font-size="10" fill="#3b82f6" letter-spacing="5">CONTROL</text>
+</svg>

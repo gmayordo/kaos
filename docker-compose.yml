@@ -1,0 +1,37 @@
+services:
+  # --- Frontend (React + Nginx) ---
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: kaos-frontend
+    ports:
+      - "${FRONTEND_PORT:-2000}:80"
+    depends_on:
+      - backend
+    restart: always
+    networks:
+      - postgres_ehcos-network
+
+  # --- Backend (Spring Boot) ---
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: kaos-backend
+    ports:
+      - "${BACKEND_PORT:-6060}:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-container:5432/${DB_NAME:-kaosdb}
+      SPRING_DATASOURCE_USERNAME: ${DB_USER:-postgres}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-postgres}
+    restart: always
+    networks:
+      - postgres_ehcos-network
+
+  # PostgreSQL: usa el contenedor 'postgres-container' de dockerconf/postgres
+
+networks:
+  postgres_ehcos-network:
+    external: true

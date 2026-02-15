@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  <!-- Fondo circular rojo oscuro -->
+  <circle cx="60" cy="60" r="58" fill="#1a1a2e" stroke="#e63946" stroke-width="4"/>
+  <!-- Anillo interior -->
+  <circle cx="60" cy="60" r="48" fill="none" stroke="#e63946" stroke-width="2" stroke-dasharray="8 4"/>
+  <!-- Texto KAOS estilizado -->
+  <text x="60" y="68" text-anchor="middle" font-family="Arial Black, Impact, sans-serif" font-weight="900" font-size="32" fill="#e63946" letter-spacing="4">KAOS</text>
+  <!-- Rayo/trueno decorativo arriba -->
+  <path d="M52 18 L58 32 L54 32 L62 46 L56 34 L60 34 Z" fill="#e63946" opacity="0.8"/>
+  <!-- Rayo derecho -->
+  <path d="M68 18 L74 32 L70 32 L78 46 L72 34 L76 34 Z" fill="#e63946" opacity="0.6"/>
+  <!-- Línea inferior decorativa -->
+  <line x1="30" y1="80" x2="90" y2="80" stroke="#e63946" stroke-width="1.5" opacity="0.5"/>
+  <text x="60" y="92" text-anchor="middle" font-family="Arial, sans-serif" font-size="8" fill="#e63946" opacity="0.7" letter-spacing="6">VILLAIN</text>
+</svg>
