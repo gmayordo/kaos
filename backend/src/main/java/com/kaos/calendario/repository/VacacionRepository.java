@@ -43,8 +43,8 @@ public interface VacacionRepository extends JpaRepository<Vacacion, Long> {
      */
     @Query("SELECT v FROM Vacacion v JOIN SquadMember sm ON v.persona.id = sm.persona.id " +
            "WHERE sm.squad.id = :squadId " +
-           "AND (:fechaInicio IS NULL OR v.fechaFin >= :fechaInicio) " +
-           "AND (:fechaFin IS NULL OR v.fechaInicio <= :fechaFin)")
+           "AND (CAST(:fechaInicio AS date) IS NULL OR v.fechaFin >= :fechaInicio) " +
+           "AND (CAST(:fechaFin AS date) IS NULL OR v.fechaInicio <= :fechaFin)")
     List<Vacacion> findBySquadIdAndFechaRange(
             @Param("squadId") Long squadId,
             @Param("fechaInicio") LocalDate fechaInicio,

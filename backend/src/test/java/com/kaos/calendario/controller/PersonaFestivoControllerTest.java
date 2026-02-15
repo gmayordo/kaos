@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -18,13 +19,14 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.web.servlet.MockMvc;
 import com.kaos.calendario.dto.FestivoResponse;
-import com.kaos.calendario.dto.PersonaBasicInfo;
 import com.kaos.calendario.entity.TipoFestivo;
 import com.kaos.calendario.service.FestivoService;
+import com.kaos.persona.entity.Persona;
+import com.kaos.persona.repository.PersonaRepository;
 
 /**
  * Tests de integración para {@link PersonaFestivoController}.
- * Valida endpoints REST con @SpringBootTest y MockMvc.
+ * Valida endpoints REST que listan festivos por ciudad de la persona.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -37,42 +39,45 @@ class PersonaFestivoControllerTest {
     @MockBean
     private FestivoService service;
 
+    @MockBean
+    private PersonaRepository personaRepository;
+
     private FestivoResponse createMockResponse(Long id, LocalDate fecha, String descripcion,
-            TipoFestivo tipo, List<PersonaBasicInfo> personas) {
-        return new FestivoResponse(
-                id,
-                fecha,
-                descripcion,
-                tipo,
-                personas,
-                LocalDateTime.now(),
-                LocalDateTime.now()
-        );
+            TipoFestivo tipo, String ciudad) {
+        return new FestivoResponse(id, fecha, descripcion, tipo, ciudad,
+                LocalDateTime.now(), LocalDateTime.now());
     }
 
-    private PersonaBasicInfo createPersonaBasicInfo(Long id, String nombre, String email) {
-        return new PersonaBasicInfo(id, nombre, email);
+    private Persona createMockPersona(Long id, String nombre, String email, String ciudad) {
+        Persona persona = new Persona();
+        persona.setId(id);
+        persona.setNombre(nombre);
+        persona.setEmail(email);
+        persona.setCiudad(ciudad);
+        return persona;
     }
 
     // ══════════════════════════════════════════════════════════
-    // GET /api/v1/personas/{personaId}/festivos - Listar por persona
+    // GET /api/v1/personas/{personaId}/festivos - Listar festivos por ciudad
     // ══════════════════════════════════════════════════════════
 
     @Nested
-    @DisplayName("GET /api/v1/personas/{personaId}/festivos - Listar por persona")
+    @DisplayName("GET /api/v1/personas/{personaId}/festivos - Listar festivos por ciudad de persona")
     class ListarPorPersonaTests {
 
         @Test
-        @DisplayName("GET sin filtros retorna 200 con lista de festivos de la persona")
+        @DisplayName("GET sin filtros retorna 200 con festivos de la ciudad de la persona")
         void listar_sinFiltros_retorna200() throws Exception {
             // given
             Long personaId = 1L;
-            PersonaBasicInfo persona = createPersonaBasicInfo(personaId, "Juan Pérez", "juan@email.com");
+            Persona persona = createMockPersona(personaId, "Juan Pérez", "juan@email.com", "Zaragoza");
             FestivoResponse f1 = createMockResponse(1L, LocalDate.of(2024, 12, 25), "Navidad",
-                    TipoFestivo.NACIONAL, List.of(persona));
+                    TipoFestivo.NACIONAL, "Zaragoza");
             FestivoResponse f2 = createMockResponse(2L, LocalDate.of(2024, 1, 1), "Año Nuevo",
-                    TipoFestivo.NACIONAL, List.of(persona));
-            when(service.listarPorPersona(personaId, null, null)).thenReturn(List.of(f1, f2));
+                    TipoFestivo.NACIONAL, "Zaragoza");
+
+            when(personaRepository.findById(personaId)).thenReturn(Optional.of(persona));
+            when(service.listarPorCiudad("Zaragoza", null, null)).thenReturn(List.of(f1, f2));
 
             // when & then
             mockMvc.perform(get("/api/v1/personas/{personaId}/festivos", personaId))
@@ -82,7 +87,8 @@ class PersonaFestivoControllerTest {
                     .andExpect(jsonPath("$[0].descripcion").value("Navidad"))
                     .andExpect(jsonPath("$[1].descripcion").value("Año Nuevo"));
 
-            verify(service).listarPorPersona(eq(personaId), eq(null), eq(null));
+            verify(personaRepository).findById(eq(personaId));
+            verify(service).listarPorCiudad(eq("Zaragoza"), eq(null), eq(null));
         }
 
         @Test
@@ -91,20 +97,22 @@ class PersonaFestivoControllerTest {
             // given
             Long personaId = 1L;
             LocalDate fechaInicio = LocalDate.of(2024, 7, 1);
-            PersonaBasicInfo persona = createPersonaBasicInfo(personaId, "Juan Pérez", "juan@email.com");
+            Persona persona = createMockPersona(personaId, "Juan Pérez", "juan@email.com", "Valencia");
             FestivoResponse f1 = createMockResponse(1L, LocalDate.of(2024, 12, 25), "Navidad",
-                    TipoFestivo.NACIONAL, List.of(persona));
-            when(service.listarPorPersona(personaId, fechaInicio, null)).thenReturn(List.of(f1));
+                    TipoFestivo.NACIONAL, "Valencia");
+
+            when(personaRepository.findById(personaId)).thenReturn(Optional.of(persona));
+            when(service.listarPorCiudad("Valencia", fechaInicio, null)).thenReturn(List.of(f1));
 
             // when & then
             mockMvc.perform(get("/api/v1/personas/{personaId}/festivos", personaId)
                     .param("fechaInicio", fechaInicio.toString()))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$").isArray())
                     .andExpect(jsonPath("$.length()").value(1))
                     .andExpect(jsonPath("$[0].descripcion").value("Navidad"));
 
-            verify(service).listarPorPersona(eq(personaId), eq(fechaInicio), eq(null));
+            verify(personaRepository).findById(eq(personaId));
+            verify(service).listarPorCiudad(eq("Valencia"), eq(fechaInicio), eq(null));
         }
 
         @Test
@@ -113,20 +121,22 @@ class PersonaFestivoControllerTest {
             // given
             Long personaId = 1L;
             LocalDate fechaFin = LocalDate.of(2024, 12, 31);
-            PersonaBasicInfo persona = createPersonaBasicInfo(personaId, "Juan Pérez", "juan@email.com");
+            Persona persona = createMockPersona(personaId, "Juan Pérez", "juan@email.com", "Temuco");
             FestivoResponse f1 = createMockResponse(1L, LocalDate.of(2024, 12, 25), "Navidad",
-                    TipoFestivo.NACIONAL, List.of(persona));
-            when(service.listarPorPersona(personaId, null, fechaFin)).thenReturn(List.of(f1));
+                    TipoFestivo.NACIONAL, "Temuco");
+
+            when(personaRepository.findById(personaId)).thenReturn(Optional.of(persona));
+            when(service.listarPorCiudad("Temuco", null, fechaFin)).thenReturn(List.of(f1));
 
             // when & then
             mockMvc.perform(get("/api/v1/personas/{personaId}/festivos", personaId)
                     .param("fechaFin", fechaFin.toString()))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$").isArray())
                     .andExpect(jsonPath("$.length()").value(1))
                     .andExpect(jsonPath("$[0].descripcion").value("Navidad"));
 
-            verify(service).listarPorPersona(eq(personaId), eq(null), eq(fechaFin));
+            verify(personaRepository).findById(eq(personaId));
+            verify(service).listarPorCiudad(eq("Temuco"), eq(null), eq(fechaFin));
         }
 
         @Test
@@ -136,29 +146,34 @@ class PersonaFestivoControllerTest {
             Long personaId = 1L;
             LocalDate fechaInicio = LocalDate.of(2024, 1, 1);
             LocalDate fechaFin = LocalDate.of(2024, 12, 31);
-            PersonaBasicInfo persona = createPersonaBasicInfo(personaId, "Juan Pérez", "juan@email.com");
+            Persona persona = createMockPersona(personaId, "Juan Pérez", "juan@email.com", "Zaragoza");
             FestivoResponse f1 = createMockResponse(1L, LocalDate.of(2024, 12, 25), "Navidad",
-                    TipoFestivo.NACIONAL, List.of(persona));
-            when(service.listarPorPersona(personaId, fechaInicio, fechaFin)).thenReturn(List.of(f1));
+                    TipoFestivo.NACIONAL, "Zaragoza");
+
+            when(personaRepository.findById(personaId)).thenReturn(Optional.of(persona));
+            when(service.listarPorCiudad("Zaragoza", fechaInicio, fechaFin)).thenReturn(List.of(f1));
 
             // when & then
             mockMvc.perform(get("/api/v1/personas/{personaId}/festivos", personaId)
                     .param("fechaInicio", fechaInicio.toString())
                     .param("fechaFin", fechaFin.toString()))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$").isArray())
                     .andExpect(jsonPath("$.length()").value(1))
                     .andExpect(jsonPath("$[0].descripcion").value("Navidad"));
 
-            verify(service).listarPorPersona(eq(personaId), eq(fechaInicio), eq(fechaFin));
+            verify(personaRepository).findById(eq(personaId));
+            verify(service).listarPorCiudad(eq("Zaragoza"), eq(fechaInicio), eq(fechaFin));
         }
 
         @Test
-        @DisplayName("GET retorna lista vacía cuando no hay festivos asignados")
+        @DisplayName("GET retorna lista vacía cuando no hay festivos en la ciudad")
         void listar_sinFestivos_retornaListaVacia() throws Exception {
             // given
             Long personaId = 1L;
-            when(service.listarPorPersona(personaId, null, null)).thenReturn(List.of());
+            Persona persona = createMockPersona(personaId, "Juan Pérez", "juan@email.com", "Zaragoza");
+
+            when(personaRepository.findById(personaId)).thenReturn(Optional.of(persona));
+            when(service.listarPorCiudad("Zaragoza", null, null)).thenReturn(List.of());
 
             // when & then
             mockMvc.perform(get("/api/v1/personas/{personaId}/festivos", personaId))
@@ -166,7 +181,22 @@ class PersonaFestivoControllerTest {
                     .andExpect(jsonPath("$").isArray())
                     .andExpect(jsonPath("$.length()").value(0));
 
-            verify(service).listarPorPersona(eq(personaId), eq(null), eq(null));
+            verify(personaRepository).findById(eq(personaId));
+            verify(service).listarPorCiudad(eq("Zaragoza"), eq(null), eq(null));
+        }
+
+        @Test
+        @DisplayName("GET retorna 404 cuando persona no existe")
+        void listar_personaInexistente_retorna404() throws Exception {
+            // given
+            Long personaId = 999L;
+            when(personaRepository.findById(personaId)).thenReturn(Optional.empty());
+
+            // when & then
+            mockMvc.perform(get("/api/v1/personas/{personaId}/festivos", personaId))
+                    .andExpect(status().isNotFound());
+
+            verify(personaRepository).findById(eq(personaId));
         }
     }
 }

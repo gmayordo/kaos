@@ -15,6 +15,7 @@ public record PersonaResponse(
         String idJira,
         Long perfilHorarioId,
         String perfilHorarioNombre,
+        String ciudad,
         Seniority seniority,
         String skills,
         BigDecimal costeHora,

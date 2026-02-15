@@ -11,6 +11,7 @@ import com.kaos.calendario.entity.TipoFestivo;
 
 /**
  * Repositorio para {@link Festivo}.
+ * Festivos están vinculados a ciudad (calendario laboral por ubicación).
  */
 @Repository
 public interface FestivoRepository extends JpaRepository<Festivo, Long> {
@@ -33,19 +34,19 @@ public interface FestivoRepository extends JpaRepository<Festivo, Long> {
     List<Festivo> findByAnioAndTipo(@Param("anio") int anio, @Param("tipo") TipoFestivo tipo);
 
     /**
-     * Busca festivos asignados a una persona en un rango de fechas.
+     * Busca festivos de una ciudad en un rango de fechas.
      */
-    @Query("SELECT f FROM Festivo f JOIN f.personas p WHERE p.id = :personaId " +
+    @Query("SELECT f FROM Festivo f WHERE f.ciudad = :ciudad " +
            "AND (:fechaInicio IS NULL OR f.fecha >= :fechaInicio) " +
            "AND (:fechaFin IS NULL OR f.fecha <= :fechaFin)")
-    List<Festivo> findByPersonaIdAndFechaRange(
-            @Param("personaId") Long personaId,
+    List<Festivo> findByCiudadAndFechaRange(
+            @Param("ciudad") String ciudad,
             @Param("fechaInicio") LocalDate fechaInicio,
             @Param("fechaFin") LocalDate fechaFin
     );
 
     /**
-     * Verifica si ya existe un festivo con fecha y descripción.
+     * Verifica si ya existe un festivo con fecha, descripción y ciudad.
      */
-    boolean existsByFechaAndDescripcion(LocalDate fecha, String descripcion);
+    boolean existsByFechaAndDescripcionAndCiudad(LocalDate fecha, String descripcion, String ciudad);
 }

@@ -33,6 +33,7 @@ import com.kaos.calendario.dto.FestivoRequest;
 import com.kaos.calendario.dto.FestivoResponse;
 import com.kaos.calendario.entity.TipoFestivo;
 import com.kaos.calendario.service.FestivoService;
+import jakarta.persistence.EntityNotFoundException;
 
 /**
  * Tests de integración para {@link FestivoController}.
@@ -52,13 +53,13 @@ class FestivoControllerTest {
     @MockBean
     private FestivoService service;
 
-    private FestivoResponse createMockResponse(Long id, LocalDate fecha, String descripcion, TipoFestivo tipo) {
+    private FestivoResponse createMockResponse(Long id, LocalDate fecha, String descripcion, TipoFestivo tipo, String ciudad) {
         return new FestivoResponse(
                 id,
                 fecha,
                 descripcion,
                 tipo,
-                List.of(), // personas vacías para simplificar
+                ciudad,
                 LocalDateTime.now(),
                 LocalDateTime.now()
         );
@@ -76,8 +77,8 @@ class FestivoControllerTest {
         @DisplayName("GET sin filtros retorna 200 con lista completa")
         void listar_sinFiltros_retorna200() throws Exception {
             // given
-            FestivoResponse f1 = createMockResponse(1L, LocalDate.of(2026, 1, 1), "Año Nuevo", TipoFestivo.NACIONAL);
-            FestivoResponse f2 = createMockResponse(2L, LocalDate.of(2026, 12, 25), "Navidad", TipoFestivo.NACIONAL);
+            FestivoResponse f1 = createMockResponse(1L, LocalDate.of(2026, 1, 1), "Año Nuevo", TipoFestivo.NACIONAL, "Zaragoza");
+            FestivoResponse f2 = createMockResponse(2L, LocalDate.of(2026, 12, 25), "Navidad", TipoFestivo.NACIONAL, "Zaragoza");
             when(service.listar(null, null)).thenReturn(List.of(f1, f2));
 
             // when & then
@@ -95,7 +96,7 @@ class FestivoControllerTest {
         @DisplayName("GET con filtro anio retorna 200 filtrado")
         void listar_conFiltroAnio_retorna200() throws Exception {
             // given
-            FestivoResponse f1 = createMockResponse(1L, LocalDate.of(2026, 1, 1), "Año Nuevo", TipoFestivo.NACIONAL);
+            FestivoResponse f1 = createMockResponse(1L, LocalDate.of(2026, 1, 1), "Año Nuevo", TipoFestivo.NACIONAL, "Valencia");
             when(service.listar(2026, null)).thenReturn(List.of(f1));
 
             // when & then
@@ -112,7 +113,7 @@ class FestivoControllerTest {
         @DisplayName("GET con filtro tipo retorna 200 filtrado")
         void listar_conFiltroTipo_retorna200() throws Exception {
             // given
-            FestivoResponse f1 = createMockResponse(1L, LocalDate.of(2026, 1, 6), "Día Regional", TipoFestivo.REGIONAL);
+            FestivoResponse f1 = createMockResponse(1L, LocalDate.of(2026, 1, 6), "Día Regional", TipoFestivo.REGIONAL, "Temuco");
             when(service.listar(null, TipoFestivo.REGIONAL)).thenReturn(List.of(f1));
 
             // when & then
@@ -154,7 +155,7 @@ class FestivoControllerTest {
         @DisplayName("GET por ID existente retorna 200")
         void obtener_idExistente_retorna200() throws Exception {
             // given
-            FestivoResponse response = createMockResponse(1L, LocalDate.of(2026, 1, 1), "Año Nuevo", TipoFestivo.NACIONAL);
+            FestivoResponse response = createMockResponse(1L, LocalDate.of(2026, 1, 1), "Año Nuevo", TipoFestivo.NACIONAL, "Zaragoza");
             when(service.obtener(1L)).thenReturn(response);
 
             // when & then
@@ -170,7 +171,7 @@ class FestivoControllerTest {
         @DisplayName("GET por ID inexistente retorna 404")
         void obtener_idInexistente_retorna404() throws Exception {
             // given
-            when(service.obtener(999L)).thenThrow(new IllegalArgumentException("Festivo no encontrado: 999"));
+            when(service.obtener(999L)).thenThrow(new EntityNotFoundException("Festivo no encontrado con id: 999"));
 
             // when & then
             mockMvc.perform(get("/api/v1/festivos/999"))
@@ -194,10 +195,10 @@ class FestivoControllerTest {
                     LocalDate.of(2026, 5, 1),
                     "Día del Trabajo",
                     TipoFestivo.NACIONAL,
-                    List.of(1L, 2L)
+                    "Zaragoza"
             );
 
-            FestivoResponse response = createMockResponse(1L, request.fecha(), request.descripcion(), request.tipo());
+            FestivoResponse response = createMockResponse(1L, request.fecha(), request.descripcion(), request.tipo(), request.ciudad());
             when(service.crear(any(FestivoRequest.class))).thenReturn(response);
 
             // when & then
@@ -220,7 +221,7 @@ class FestivoControllerTest {
                         "fecha": null,
                         "descripcion": "Test",
                         "tipo": "NACIONAL",
-                        "personaIds": []
+                        "ciudad": "Zaragoza"
                     }
                     """;
 
@@ -240,7 +241,7 @@ class FestivoControllerTest {
                         "fecha": "2026-01-01",
                         "descripcion": "",
                         "tipo": "NACIONAL",
-                        "personaIds": []
+                        "ciudad": "Valencia"
                     }
                     """;
 
@@ -259,7 +260,7 @@ class FestivoControllerTest {
                     LocalDate.of(2026, 1, 1),
                     "Año Nuevo",
                     TipoFestivo.NACIONAL,
-                    List.of()
+                    "Temuco"
             );
 
             when(service.crear(any())).thenThrow(new IllegalArgumentException("Ya existe un festivo con la misma fecha y descripción"));
@@ -288,10 +289,10 @@ class FestivoControllerTest {
                     LocalDate.of(2026, 1, 1),
                     "Año Nuevo Actualizado",
                     TipoFestivo.NACIONAL,
-                    List.of(1L)
+                    "Zaragoza"
             );
 
-            FestivoResponse response = createMockResponse(1L, request.fecha(), request.descripcion(), request.tipo());
+            FestivoResponse response = createMockResponse(1L, request.fecha(), request.descripcion(), request.tipo(), request.ciudad());
             when(service.actualizar(eq(1L), any(FestivoRequest.class))).thenReturn(response);
 
             // when & then
@@ -312,10 +313,10 @@ class FestivoControllerTest {
                     LocalDate.of(2026, 1, 1),
                     "Test",
                     TipoFestivo.NACIONAL,
-                    List.of()
+                    "Zaragoza"
             );
 
-            when(service.actualizar(eq(999L), any())).thenThrow(new IllegalArgumentException("Festivo no encontrado: 999"));
+            when(service.actualizar(eq(999L), any())).thenThrow(new EntityNotFoundException("Festivo no encontrado con id: 999"));
 
             // when & then
             mockMvc.perform(put("/api/v1/festivos/999")
@@ -350,7 +351,7 @@ class FestivoControllerTest {
         @DisplayName("DELETE con ID inexistente retorna 404")
         void eliminar_idInexistente_retorna404() throws Exception {
             // given
-            doThrow(new IllegalArgumentException("Festivo no encontrado: 999"))
+            doThrow(new EntityNotFoundException("Festivo no encontrado con id: 999"))
                     .when(service).eliminar(999L);
 
             // when & then

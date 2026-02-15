@@ -71,7 +71,7 @@ class VacacionServiceTest {
                 LocalDate.of(2026, 3, 2), // lunes
                 LocalDate.of(2026, 3, 8), // domingo
                 TipoVacacion.VACACIONES,
-                EstadoVacacion.APROBADA,
+                EstadoVacacion.SOLICITADA,
                 "Vacaciones de marzo"
         );
 
@@ -83,7 +83,7 @@ class VacacionServiceTest {
                 .fechaFin(LocalDate.of(2026, 3, 8))
                 .diasLaborables(5)
                 .tipo(TipoVacacion.VACACIONES)
-                .estado(EstadoVacacion.APROBADA)
+                .estado(EstadoVacacion.REGISTRADA)
                 .comentario("Vacaciones de marzo")
                 .build();
 
@@ -96,7 +96,7 @@ class VacacionServiceTest {
                 LocalDate.of(2026, 3, 8),
                 5,
                 TipoVacacion.VACACIONES,
-                EstadoVacacion.APROBADA,
+                EstadoVacacion.REGISTRADA,
                 "Vacaciones de marzo",
                 LocalDateTime.now(),
                 LocalDateTime.now()
@@ -120,7 +120,7 @@ class VacacionServiceTest {
                     LocalDate.of(2026, 3, 2), // lunes
                     LocalDate.of(2026, 3, 2), // mismo día
                     TipoVacacion.VACACIONES,
-                    EstadoVacacion.APROBADA,
+                    EstadoVacacion.REGISTRADA,
                     "Mismo día"
             );
 
@@ -150,7 +150,7 @@ class VacacionServiceTest {
                     LocalDate.of(2026, 3, 7), // sábado
                     LocalDate.of(2026, 3, 7),
                     TipoVacacion.VACACIONES,
-                    EstadoVacacion.APROBADA,
+                    EstadoVacacion.REGISTRADA,
                     "Sábado"
             );
 
@@ -180,7 +180,7 @@ class VacacionServiceTest {
                     LocalDate.of(2026, 3, 2), // lunes
                     LocalDate.of(2026, 3, 8), // domingo
                     TipoVacacion.VACACIONES,
-                    EstadoVacacion.APROBADA,
+                    EstadoVacacion.REGISTRADA,
                     "Semana completa"
             );
 
@@ -210,7 +210,7 @@ class VacacionServiceTest {
                     LocalDate.of(2026, 3, 6), // viernes
                     LocalDate.of(2026, 3, 9), // lunes
                     TipoVacacion.VACACIONES,
-                    EstadoVacacion.APROBADA,
+                    EstadoVacacion.REGISTRADA,
                     "Viernes a lunes"
             );
 
@@ -240,7 +240,7 @@ class VacacionServiceTest {
                     LocalDate.of(2026, 3, 7), // sábado
                     LocalDate.of(2026, 3, 8), // domingo
                     TipoVacacion.VACACIONES,
-                    EstadoVacacion.APROBADA,
+                    EstadoVacacion.REGISTRADA,
                     "Fin de semana"
             );
 
@@ -270,7 +270,7 @@ class VacacionServiceTest {
                     LocalDate.of(2026, 3, 2), // lunes
                     LocalDate.of(2026, 3, 15), // domingo (2 semanas)
                     TipoVacacion.VACACIONES,
-                    EstadoVacacion.APROBADA,
+                    EstadoVacacion.REGISTRADA,
                     "2 semanas"
             );
 
@@ -300,7 +300,7 @@ class VacacionServiceTest {
                     LocalDate.of(2026, 3, 1), // domingo
                     LocalDate.of(2026, 3, 31), // martes
                     TipoVacacion.VACACIONES,
-                    EstadoVacacion.APROBADA,
+                    EstadoVacacion.REGISTRADA,
                     "Mes completo"
             );
 
@@ -422,7 +422,7 @@ class VacacionServiceTest {
                     LocalDate.of(2026, 3, 10),
                     LocalDate.of(2026, 3, 5), // fin anterior a inicio
                     TipoVacacion.VACACIONES,
-                    EstadoVacacion.APROBADA,
+                    EstadoVacacion.REGISTRADA,
                     "Fechas inválidas"
             );
 
@@ -445,7 +445,7 @@ class VacacionServiceTest {
                     LocalDate.of(2026, 3, 2),
                     LocalDate.of(2026, 3, 8),
                     TipoVacacion.VACACIONES,
-                    EstadoVacacion.APROBADA,
+                    EstadoVacacion.REGISTRADA,
                     "Persona inexistente"
             );
 
@@ -494,7 +494,7 @@ class VacacionServiceTest {
                     LocalDate.of(2026, 3, 2),
                     LocalDate.of(2026, 3, 15), // Cambia fin (2 semanas ahora)
                     TipoVacacion.VACACIONES,
-                    EstadoVacacion.APROBADA,
+                    EstadoVacacion.REGISTRADA,
                     "Extendida"
             );
 
@@ -557,7 +557,7 @@ class VacacionServiceTest {
             when(mapper.toResponseList(vacaciones)).thenReturn(List.of(responseMock));
 
             // when
-            List<VacacionResponse> result = service.listar(null, null);
+            List<VacacionResponse> result = service.listar(null, null, null, null);
 
             // then
             assertThat(result).hasSize(1);
@@ -573,7 +573,7 @@ class VacacionServiceTest {
             when(mapper.toResponseList(vacaciones)).thenReturn(List.of(responseMock));
 
             // when
-            List<VacacionResponse> result = service.listar(1L, null);
+            List<VacacionResponse> result = service.listar(1L, null, null, null);
 
             // then
             assertThat(result).hasSize(1);
@@ -590,7 +590,7 @@ class VacacionServiceTest {
             when(mapper.toResponseList(vacaciones)).thenReturn(List.of(responseMock));
 
             // when
-            List<VacacionResponse> result = service.listar(null, 5L);
+            List<VacacionResponse> result = service.listar(null, 5L, null, null);
 
             // then
             assertThat(result).hasSize(1);

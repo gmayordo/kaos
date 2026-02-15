@@ -168,8 +168,7 @@ export interface FestivoResponse {
   fecha: string;
   descripcion: string;
   tipo: TipoFestivo;
-  personaIds: number[];
-  cantidadPersonas: number;
+  ciudad: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -178,7 +177,7 @@ export interface FestivoRequest {
   fecha: string;
   descripcion: string;
   tipo: TipoFestivo;
-  personaIds: number[];
+  ciudad: string;
 }
 
 export interface FestivoCsvUploadResponse {

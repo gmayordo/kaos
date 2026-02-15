@@ -38,9 +38,12 @@ public class AusenciaController {
     @Operation(summary = "Lista ausencias con filtros opcionales")
     public ResponseEntity<List<AusenciaResponse>> listarAusencias(
             @RequestParam(required = false) Long personaId,
-            @RequestParam(required = false) Long squadId) {
-        log.info("GET /api/v1/ausencias?personaId={}&squadId={}", personaId, squadId);
-        return ResponseEntity.ok(service.listar(personaId, squadId));
+            @RequestParam(required = false) Long squadId,
+            @RequestParam(required = false) String fechaInicio,
+            @RequestParam(required = false) String fechaFin) {
+        log.info("GET /api/v1/ausencias?personaId={}&squadId={}&fechaInicio={}&fechaFin={}", 
+                personaId, squadId, fechaInicio, fechaFin);
+        return ResponseEntity.ok(service.listar(personaId, squadId, fechaInicio, fechaFin));
     }
 
     @GetMapping("/{id}")

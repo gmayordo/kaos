@@ -48,9 +48,17 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ErrorResponse> handleIllegalArgument(IllegalArgumentException ex) {
-        log.warn("Argumento inválido: {}", ex.getMessage());
+        String message = ex.getMessage();
+        log.warn("Argumento inválido: {}", message);
+
+        // Detectar conflictos por mensaje
+        if (message != null && (message.contains("Ya existe") || message.contains("duplicado") || message.contains("ya registrado"))) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(ErrorResponse.of("CONFLICT", message));
+        }
+
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(ErrorResponse.of("BAD_REQUEST", ex.getMessage()));
+                .body(ErrorResponse.of("BAD_REQUEST", message));
     }
 
     @ExceptionHandler(IllegalStateException.class)

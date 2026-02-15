@@ -1,5 +1,17 @@
 package com.kaos.calendario.controller;
 
+import java.util.List;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import com.kaos.calendario.dto.VacacionRequest;
 import com.kaos.calendario.dto.VacacionResponse;
 import com.kaos.calendario.service.VacacionService;
@@ -8,11 +20,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 /**
  * Controller REST para operaciones CRUD de Vacacion.
@@ -31,9 +38,12 @@ public class VacacionController {
     @Operation(summary = "Lista vacaciones con filtros opcionales")
     public ResponseEntity<List<VacacionResponse>> listarVacaciones(
             @RequestParam(required = false) Long personaId,
-            @RequestParam(required = false) Long squadId) {
-        log.info("GET /api/v1/vacaciones?personaId={}&squadId={}", personaId, squadId);
-        return ResponseEntity.ok(service.listar(personaId, squadId));
+            @RequestParam(required = false) Long squadId,
+            @RequestParam(required = false) String fechaInicio,
+            @RequestParam(required = false) String fechaFin) {
+        log.info("GET /api/v1/vacaciones?personaId={}&squadId={}&fechaInicio={}&fechaFin={}", 
+                personaId, squadId, fechaInicio, fechaFin);
+        return ResponseEntity.ok(service.listar(personaId, squadId, fechaInicio, fechaFin));
     }
 
     @GetMapping("/{id}")

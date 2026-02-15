@@ -1,19 +1,12 @@
 package com.kaos.calendario.entity;
 
 import java.time.LocalDate;
-import java.util.HashSet;
-import java.util.Set;
 import org.hibernate.annotations.Comment;
 import com.kaos.common.model.BaseEntity;
-import com.kaos.persona.entity.Persona;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.JoinTable;
-import jakarta.persistence.ManyToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import lombok.AllArgsConstructor;
@@ -23,18 +16,18 @@ import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
 /**
- * Festivo asignado a una o más personas.
- * Un festivo implica 0 horas de capacidad para las personas asignadas.
+ * Festivo por ciudad/ubicación.
+ * Un festivo implica 0 horas de capacidad para las personas de esa ciudad.
  */
 @Entity
 @Table(
     name = "festivo",
     uniqueConstraints = @UniqueConstraint(
-        name = "uk_festivo_fecha_descripcion",
-        columnNames = {"fecha", "descripcion"}
+        name = "uk_festivo_fecha_descripcion_ciudad",
+        columnNames = {"fecha", "descripcion", "ciudad"}
     )
 )
-@Comment("Festivos asignados a personas específicas")
+@Comment("Festivos por ciudad/ubicación")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -55,13 +48,7 @@ public class Festivo extends BaseEntity {
     @Column(name = "tipo", nullable = false, length = 20)
     private TipoFestivo tipo;
 
-    @Comment("Personas a las que aplica este festivo")
-    @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(
-        name = "persona_festivo",
-        joinColumns = @JoinColumn(name = "festivo_id"),
-        inverseJoinColumns = @JoinColumn(name = "persona_id")
-    )
-    @lombok.Builder.Default
-    private Set<Persona> personas = new HashSet<>();
+    @Comment("Ciudad del festivo (Madrid, Barcelona, Santiago, etc.)")
+    @Column(name = "ciudad", nullable = false, length = 100)
+    private String ciudad;
 }

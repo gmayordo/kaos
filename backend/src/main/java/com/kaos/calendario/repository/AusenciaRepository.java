@@ -34,8 +34,8 @@ public interface AusenciaRepository extends JpaRepository<Ausencia, Long> {
            "JOIN a.persona p " +
            "JOIN SquadMember sm ON sm.persona.id = p.id " +
            "WHERE sm.squad.id = :squadId " +
-           "AND (:fechaInicio IS NULL OR a.fechaFin IS NULL OR a.fechaFin >= :fechaInicio) " +
-           "AND (:fechaFin IS NULL OR a.fechaInicio <= :fechaFin)")
+           "AND (CAST(:fechaInicio AS date) IS NULL OR a.fechaFin IS NULL OR a.fechaFin >= :fechaInicio) " +
+           "AND (CAST(:fechaFin AS date) IS NULL OR a.fechaInicio <= :fechaFin)")
     List<Ausencia> findBySquadIdAndFechaRange(
             @Param("squadId") Long squadId,
             @Param("fechaInicio") LocalDate fechaInicio,

@@ -116,9 +116,9 @@ public class CapacidadService {
         Persona persona = miembro.getPersona();
         log.debug("Calculando capacidad para persona {}", persona.getNombre());
 
-        // Filtrar festivos, vacaciones, ausencias de esta persona
+        // Filtrar festivos por ciudad de la persona
         Set<LocalDate> festivosPersona = todosFestivos.stream()
-                .filter(f -> f.getPersonas().contains(persona))
+                .filter(f -> f.getCiudad().equals(persona.getCiudad()))
                 .map(Festivo::getFecha)
                 .collect(Collectors.toSet());
 

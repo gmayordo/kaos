@@ -1,17 +1,15 @@
 /**
  * FestivoForm — Formulario de festivo
- * Componente para crear/editar festivos con asignación a personas
+ * Componente para crear/editar festivos por ciudad
  */
 
-import type { FestivoRequest, PersonaResponse, TipoFestivo } from "@/types/api";
+import type { FestivoRequest, TipoFestivo } from "@/types/api";
 import type { FC } from "react";
 import { useEffect, useState } from "react";
 
 interface Props {
   /** Festivo existente (para editar) o null (para crear) */
   festivo?: (FestivoRequest & { id?: number }) | null;
-  /** Lista de personas disponibles */
-  personas: PersonaResponse[];
   /** Callback al enviar el formulario */
   onSubmit: (data: FestivoRequest) => void;
   /** Callback al cancelar */
@@ -26,13 +24,17 @@ const tiposFestivo: { value: TipoFestivo; label: string; emoji: string }[] = [
   { value: "LOCAL", label: "Local", emoji: "🏘️" },
 ];
 
+const ciudades = [
+  { value: "Zaragoza", label: "Zaragoza 🇪🇸", flag: "🇪🇸" },
+  { value: "Valencia", label: "Valencia 🇪🇸", flag: "🇪🇸" },
+  { value: "Temuco", label: "Temuco 🇨🇱", flag: "🇨🇱" },
+];
+
 /**
- * Formulario para gestionar festivos.
- * Permite seleccionar múltiples personas afectadas.
+ * Formulario para gestionar festivos por ciudad.
  */
 export const FestivoForm: FC<Props> = ({
   festivo,
-  personas,
   onSubmit,
   onCancel,
   isSubmitting = false,
@@ -41,10 +43,8 @@ export const FestivoForm: FC<Props> = ({
     fecha: festivo?.fecha || new Date().toISOString().split("T")[0],
     descripcion: festivo?.descripcion || "",
     tipo: festivo?.tipo || "NACIONAL",
-    personaIds: festivo?.personaIds || [],
+    ciudad: festivo?.ciudad || "Zaragoza",
   });
-
-  const [searchTerm, setSearchTerm] = useState("");
 
   // Resetear form cuando cambia festivo
   useEffect(() => {
@@ -55,15 +55,6 @@ export const FestivoForm: FC<Props> = ({
 
   const handleChange = (field: keyof FestivoRequest, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const togglePersona = (personaId: number) => {
-    setFormData((prev) => ({
-      ...prev,
-      personaIds: prev.personaIds.includes(personaId)
-        ? prev.personaIds.filter((id) => id !== personaId)
-        : [...prev.personaIds, personaId],
-    }));
   };
 
   const handleSubmitForm = (e: React.FormEvent) => {
@@ -78,24 +69,13 @@ export const FestivoForm: FC<Props> = ({
       alert("La descripción es obligatoria");
       return;
     }
-    if (formData.personaIds.length === 0) {
-      alert("Debes seleccionar al menos una persona");
+    if (!formData.ciudad) {
+      alert("La ciudad es obligatoria");
       return;
     }
 
     onSubmit(formData);
   };
-
-  const personasSeleccionadas = personas.filter((p) =>
-    formData.personaIds.includes(p.id),
-  );
-
-  const personasFiltradas = personas.filter(
-    (p) =>
-      !formData.personaIds.includes(p.id) &&
-      (p.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        p.email.toLowerCase().includes(searchTerm.toLowerCase())),
-  );
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
@@ -112,13 +92,17 @@ export const FestivoForm: FC<Props> = ({
           </button>
         </div>
 
-        <form onSubmit={handleSubmitForm} className="space-y-4">
+        <form onSubmit={handleSubmitForm} role="form" className="space-y-4">
           {/* Fecha */}
           <div>
-            <label className="mb-1 block text-sm font-medium text-zinc-700">
+            <label
+              htmlFor="fecha"
+              className="mb-1 block text-sm font-medium text-zinc-700"
+            >
               Fecha *
             </label>
             <input
+              id="fecha"
               type="date"
               value={formData.fecha}
               onChange={(e) => handleChange("fecha", e.target.value)}
@@ -129,10 +113,14 @@ export const FestivoForm: FC<Props> = ({
 
           {/* Descripción */}
           <div>
-            <label className="mb-1 block text-sm font-medium text-zinc-700">
+            <label
+              htmlFor="descripcion"
+              className="mb-1 block text-sm font-medium text-zinc-700"
+            >
               Descripción *
             </label>
             <input
+              id="descripcion"
               type="text"
               value={formData.descripcion}
               onChange={(e) => handleChange("descripcion", e.target.value)}
@@ -145,10 +133,14 @@ export const FestivoForm: FC<Props> = ({
 
           {/* Tipo */}
           <div>
-            <label className="mb-1 block text-sm font-medium text-zinc-700">
+            <label
+              htmlFor="tipo"
+              className="mb-1 block text-sm font-medium text-zinc-700"
+            >
               Tipo *
             </label>
             <select
+              id="tipo"
               value={formData.tipo}
               onChange={(e) =>
                 handleChange("tipo", e.target.value as TipoFestivo)
@@ -164,64 +156,29 @@ export const FestivoForm: FC<Props> = ({
             </select>
           </div>
 
-          {/* Personas afectadas */}
+          {/* Ciudad */}
           <div>
-            <label className="mb-1 block text-sm font-medium text-zinc-700">
-              Personas afectadas *
+            <label
+              htmlFor="ciudad"
+              className="mb-1 block text-sm font-medium text-zinc-700"
+            >
+              Ciudad *
             </label>
-
-            {/* Personas seleccionadas (chips) */}
-            {personasSeleccionadas.length > 0 && (
-              <div className="mb-2 flex flex-wrap gap-2">
-                {personasSeleccionadas.map((persona) => (
-                  <span
-                    key={persona.id}
-                    className="inline-flex items-center gap-1 rounded-md bg-blue-100 px-2 py-1 text-sm text-blue-700"
-                  >
-                    {persona.nombre}
-                    <button
-                      type="button"
-                      onClick={() => togglePersona(persona.id)}
-                      className="ml-1 text-blue-500 hover:text-blue-700"
-                    >
-                      ×
-                    </button>
-                  </span>
-                ))}
-              </div>
-            )}
-
-            {/* Búsqueda y selección */}
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Buscar persona..."
+            <select
+              id="ciudad"
+              value={formData.ciudad}
+              onChange={(e) => handleChange("ciudad", e.target.value)}
               className="w-full rounded-md border border-zinc-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-            />
-
-            {/* Lista de personas */}
-            {searchTerm && personasFiltradas.length > 0 && (
-              <div className="mt-2 max-h-40 overflow-y-auto rounded-md border border-zinc-300">
-                {personasFiltradas.map((persona) => (
-                  <button
-                    key={persona.id}
-                    type="button"
-                    onClick={() => {
-                      togglePersona(persona.id);
-                      setSearchTerm("");
-                    }}
-                    className="w-full px-3 py-2 text-left hover:bg-zinc-50"
-                  >
-                    <div className="font-medium">{persona.nombre}</div>
-                    <div className="text-xs text-zinc-500">{persona.email}</div>
-                  </button>
-                ))}
-              </div>
-            )}
-
+              required
+            >
+              {ciudades.map((ciudad) => (
+                <option key={ciudad.value} value={ciudad.value}>
+                  {ciudad.label}
+                </option>
+              ))}
+            </select>
             <div className="mt-1 text-sm text-zinc-600">
-              {formData.personaIds.length} personas seleccionadas
+              Calendario laboral de {formData.ciudad}
             </div>
           </div>
 

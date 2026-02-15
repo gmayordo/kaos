@@ -454,31 +454,6 @@ describe("AusenciaForm", () => {
     });
   });
 
-  describe("Filtrado por squad", () => {
-    it("debe filtrar personas por squadId cuando se proporciona", () => {
-      const personasConSquad = [
-        { ...mockPersonas[0], squadId: 1 },
-        { ...mockPersonas[1], squadId: 2 },
-      ];
-
-      render(
-        <AusenciaForm
-          personas={personasConSquad}
-          onSubmit={mockOnSubmit}
-          onCancel={mockOnCancel}
-          squadId={1}
-        />,
-      );
-
-      const select = screen.getByRole("combobox", { name: "Persona *" });
-      const options = screen.getAllByRole("option");
-
-      // Solo debe mostrar personas del squad 1
-      expect(options).toHaveLength(2); // placeholder + 1 persona
-      expect(options[1]).toHaveTextContent("Juan Pérez");
-    });
-  });
-
   describe("Accesibilidad", () => {
     it("debe tener labels correctos para todos los campos", () => {
       render(

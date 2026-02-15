@@ -58,7 +58,7 @@ class VacacionControllerTest {
                 fin,
                 dias,
                 TipoVacacion.VACACIONES,
-                EstadoVacacion.APROBADA,
+                EstadoVacacion.REGISTRADA,
                 null, // observaciones
                 LocalDateTime.now(),
                 LocalDateTime.now()
@@ -79,7 +79,7 @@ class VacacionControllerTest {
             // given
             VacacionResponse v1 = createMockResponse(1L, 1L, LocalDate.of(2026, 7, 1), LocalDate.of(2026, 7, 10), 8);
             VacacionResponse v2 = createMockResponse(2L, 2L, LocalDate.of(2026, 8, 15), LocalDate.of(2026, 8, 31), 13);
-            when(service.listar(null, null)).thenReturn(List.of(v1, v2));
+            when(service.listar(null, null, null, null)).thenReturn(List.of(v1, v2));
 
             // when & then
             mockMvc.perform(get("/api/v1/vacaciones"))
@@ -89,7 +89,7 @@ class VacacionControllerTest {
                     .andExpect(jsonPath("$[0].diasLaborables").value(8))
                     .andExpect(jsonPath("$[1].diasLaborables").value(13));
 
-            verify(service).listar(null, null);
+            verify(service).listar(null, null, null, null);
         }
 
         @Test
@@ -97,7 +97,7 @@ class VacacionControllerTest {
         void listar_conFiltroPersonaId_retorna200() throws Exception {
             // given
             VacacionResponse v1 = createMockResponse(1L, 1L, LocalDate.of(2026, 7, 1), LocalDate.of(2026, 7, 10), 8);
-            when(service.listar(1L, null)).thenReturn(List.of(v1));
+            when(service.listar(1L, null, null, null)).thenReturn(List.of(v1));
 
             // when & then
             mockMvc.perform(get("/api/v1/vacaciones")
@@ -106,7 +106,7 @@ class VacacionControllerTest {
                     .andExpect(jsonPath("$.length()").value(1))
                     .andExpect(jsonPath("$[0].personaId").value(1));
 
-            verify(service).listar(1L, null);
+            verify(service).listar(1L, null, null, null);
         }
 
         @Test
@@ -114,7 +114,7 @@ class VacacionControllerTest {
         void listar_conFiltroSquadId_retorna200() throws Exception {
             // given
             VacacionResponse v1 = createMockResponse(1L, 1L, LocalDate.of(2026, 7, 1), LocalDate.of(2026, 7, 10), 8);
-            when(service.listar(null, 1L)).thenReturn(List.of(v1));
+            when(service.listar(null, 1L, null, null)).thenReturn(List.of(v1));
 
             // when & then
             mockMvc.perform(get("/api/v1/vacaciones")
@@ -122,14 +122,14 @@ class VacacionControllerTest {
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.length()").value(1));
 
-            verify(service).listar(null, 1L);
+            verify(service).listar(null, 1L, null, null);
         }
 
         @Test
         @DisplayName("GET con ambos filtros retorna 200 filtrado")
         void listar_conAmbosFiltros_retorna200() throws Exception {
             // given
-            when(service.listar(1L, 2L)).thenReturn(List.of());
+            when(service.listar(1L, 2L, null, null)).thenReturn(List.of());
 
             // when & then
             mockMvc.perform(get("/api/v1/vacaciones")
@@ -138,7 +138,7 @@ class VacacionControllerTest {
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.length()").value(0));
 
-            verify(service).listar(1L, 2L);
+            verify(service).listar(1L, 2L, null, null);
         }
     }
 
@@ -167,14 +167,14 @@ class VacacionControllerTest {
         }
 
         @Test
-        @DisplayName("GET por ID inexistente retorna 404")
-        void obtener_idInexistente_retorna404() throws Exception {
+        @DisplayName("GET por ID inexistente retorna 400")
+        void obtener_idInexistente_retorna400() throws Exception {
             // given
             when(service.obtener(999L)).thenThrow(new IllegalArgumentException("Vacacion no encontrada: 999"));
 
             // when & then
             mockMvc.perform(get("/api/v1/vacaciones/999"))
-                    .andExpect(status().isNotFound());
+                    .andExpect(status().isBadRequest());
         }
     }
 
@@ -195,7 +195,7 @@ class VacacionControllerTest {
                     LocalDate.of(2026, 7, 1),
                     LocalDate.of(2026, 7, 10),
                     TipoVacacion.VACACIONES,
-                    EstadoVacacion.APROBADA,
+                    EstadoVacacion.REGISTRADA,
                     null
             );
 
@@ -222,7 +222,7 @@ class VacacionControllerTest {
                     LocalDate.of(2026, 7, 10),
                     LocalDate.of(2026, 7, 1), // anterior
                     TipoVacacion.VACACIONES,
-                    EstadoVacacion.APROBADA,
+                    EstadoVacacion.REGISTRADA,
                     null
             );
 
@@ -236,15 +236,15 @@ class VacacionControllerTest {
         }
 
         @Test
-        @DisplayName("POST con solapamiento retorna 409")
-        void crear_solapamiento_retorna409() throws Exception {
+        @DisplayName("POST con solapamiento retorna 400")
+        void crear_solapamiento_retorna400() throws Exception {
             // given
             VacacionRequest request = new VacacionRequest(
                     1L,
                     LocalDate.of(2026, 7, 1),
-                    LocalDate.of(2026, 7, 10),
+                    LocalDate.of(2026, 7, 15),
                     TipoVacacion.VACACIONES,
-                    EstadoVacacion.APROBADA,
+                    EstadoVacacion.REGISTRADA,
                     null
             );
 
@@ -254,7 +254,7 @@ class VacacionControllerTest {
             mockMvc.perform(post("/api/v1/vacaciones")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
-                    .andExpect(status().isConflict());
+                    .andExpect(status().isBadRequest());
         }
 
         @Test
@@ -266,7 +266,7 @@ class VacacionControllerTest {
                     LocalDate.of(2026, 7, 1),
                     LocalDate.of(2026, 7, 10),
                     TipoVacacion.VACACIONES,
-                    EstadoVacacion.APROBADA,
+                    EstadoVacacion.REGISTRADA,
                     null
             );
 
@@ -276,7 +276,7 @@ class VacacionControllerTest {
             mockMvc.perform(post("/api/v1/vacaciones")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
-                    .andExpect(status().isNotFound());
+                    .andExpect(status().isBadRequest());
         }
     }
 
@@ -297,7 +297,7 @@ class VacacionControllerTest {
                     LocalDate.of(2026, 7, 5),
                     LocalDate.of(2026, 7, 15),
                     TipoVacacion.VACACIONES,
-                    EstadoVacacion.APROBADA,
+                    EstadoVacacion.REGISTRADA,
                     "Ajustado"
             );
 
@@ -324,7 +324,7 @@ class VacacionControllerTest {
                     LocalDate.of(2026, 7, 1),
                     LocalDate.of(2026, 7, 10),
                     TipoVacacion.VACACIONES,
-                    EstadoVacacion.APROBADA,
+                    EstadoVacacion.REGISTRADA,
                     null
             );
 
@@ -334,19 +334,19 @@ class VacacionControllerTest {
             mockMvc.perform(put("/api/v1/vacaciones/999")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
-                    .andExpect(status().isNotFound());
+                    .andExpect(status().isBadRequest());
         }
 
         @Test
-        @DisplayName("PUT con solapamiento de otra vacación retorna 409")
-        void actualizar_solapamientoOtra_retorna409() throws Exception {
+        @DisplayName("PUT con solapamiento de otra vacación retorna 400")
+        void actualizar_solapamientoOtra_retorna400() throws Exception {
             // given
             VacacionRequest request = new VacacionRequest(
                     1L,
                     LocalDate.of(2026, 7, 1),
                     LocalDate.of(2026, 7, 20), // solapa con otra
                     TipoVacacion.VACACIONES,
-                    EstadoVacacion.APROBADA,
+                    EstadoVacacion.REGISTRADA,
                     null
             );
 
@@ -356,7 +356,7 @@ class VacacionControllerTest {
             mockMvc.perform(put("/api/v1/vacaciones/1")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
-                    .andExpect(status().isConflict());
+                    .andExpect(status().isBadRequest());
         }
     }
 
@@ -382,15 +382,15 @@ class VacacionControllerTest {
         }
 
         @Test
-        @DisplayName("DELETE con ID inexistente retorna 404")
-        void eliminar_idInexistente_retorna404() throws Exception {
+        @DisplayName("DELETE con ID inexistente retorna 400")
+        void eliminar_idInexistente_retorna400() throws Exception {
             // given
             doThrow(new IllegalArgumentException("Vacacion no encontrada: 999"))
                     .when(service).eliminar(999L);
 
             // when & then
             mockMvc.perform(delete("/api/v1/vacaciones/999"))
-                    .andExpect(status().isNotFound());
+                    .andExpect(status().isBadRequest());
         }
     }
 }

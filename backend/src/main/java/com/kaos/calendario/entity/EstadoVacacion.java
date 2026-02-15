@@ -4,9 +4,9 @@ package com.kaos.calendario.entity;
  * Estado de una vacación.
  */
 public enum EstadoVacacion {
-    /** Vacación solicitada pendiente de aprobación */
-    SOLICITADA,
+    /** Vacación registrada inicialmente */
+    REGISTRADA,
     
-    /** Vacación aprobada */
-    APROBADA
+    /** Vacación solicitada pendiente de aprobación */
+    SOLICITADA
 }

@@ -1,12 +1,10 @@
 package com.kaos.calendario.dto;
 
+import java.time.LocalDate;
 import com.kaos.calendario.entity.TipoFestivo;
-import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-
-import java.time.LocalDate;
-import java.util.List;
 
 /**
  * Request para crear o actualizar un festivo.
@@ -22,6 +20,7 @@ public record FestivoRequest(
         @NotNull(message = "El tipo es obligatorio")
         TipoFestivo tipo,
 
-        @NotEmpty(message = "Debe asignar al menos una persona")
-        List<Long> personaIds
+        @NotBlank(message = "La ciudad es obligatoria")
+        @Size(max = 100, message = "La ciudad no puede superar 100 caracteres")
+        String ciudad
 ) {}

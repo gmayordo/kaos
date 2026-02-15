@@ -68,9 +68,9 @@ class SquadVacacionControllerTest {
             // given
             Long squadId = 1L;
             VacacionResponse v1 = createMockResponse(1L, 1L, "Juan Pérez",
-                    LocalDate.of(2024, 7, 1), LocalDate.of(2024, 7, 10), 8, TipoVacacion.VACACIONES, EstadoVacacion.APROBADA);
+                    LocalDate.of(2024, 7, 1), LocalDate.of(2024, 7, 10), 8, TipoVacacion.VACACIONES, EstadoVacacion.REGISTRADA);
             VacacionResponse v2 = createMockResponse(2L, 2L, "María García",
-                    LocalDate.of(2024, 8, 15), LocalDate.of(2024, 8, 31), 13, TipoVacacion.VACACIONES, EstadoVacacion.APROBADA);
+                    LocalDate.of(2024, 8, 15), LocalDate.of(2024, 8, 31), 13, TipoVacacion.VACACIONES, EstadoVacacion.REGISTRADA);
             when(service.listarPorSquad(squadId, null, null)).thenReturn(List.of(v1, v2));
 
             // when & then
@@ -91,7 +91,7 @@ class SquadVacacionControllerTest {
             Long squadId = 1L;
             LocalDate fechaInicio = LocalDate.of(2024, 7, 1);
             VacacionResponse v1 = createMockResponse(1L, 1L, "Juan Pérez",
-                    LocalDate.of(2024, 7, 1), LocalDate.of(2024, 7, 10), 8, TipoVacacion.VACACIONES, EstadoVacacion.APROBADA);
+                    LocalDate.of(2024, 7, 1), LocalDate.of(2024, 7, 10), 8, TipoVacacion.VACACIONES, EstadoVacacion.REGISTRADA);
             when(service.listarPorSquad(squadId, fechaInicio, null)).thenReturn(List.of(v1));
 
             // when & then
@@ -112,7 +112,7 @@ class SquadVacacionControllerTest {
             Long squadId = 1L;
             LocalDate fechaFin = LocalDate.of(2024, 7, 31);
             VacacionResponse v1 = createMockResponse(1L, 1L, "Juan Pérez",
-                    LocalDate.of(2024, 7, 1), LocalDate.of(2024, 7, 10), 8, TipoVacacion.VACACIONES, EstadoVacacion.APROBADA);
+                    LocalDate.of(2024, 7, 1), LocalDate.of(2024, 7, 10), 8, TipoVacacion.VACACIONES, EstadoVacacion.REGISTRADA);
             when(service.listarPorSquad(squadId, null, fechaFin)).thenReturn(List.of(v1));
 
             // when & then
@@ -134,7 +134,7 @@ class SquadVacacionControllerTest {
             LocalDate fechaInicio = LocalDate.of(2024, 7, 1);
             LocalDate fechaFin = LocalDate.of(2024, 7, 31);
             VacacionResponse v1 = createMockResponse(1L, 1L, "Juan Pérez",
-                    LocalDate.of(2024, 7, 1), LocalDate.of(2024, 7, 10), 8, TipoVacacion.VACACIONES, EstadoVacacion.APROBADA);
+                    LocalDate.of(2024, 7, 1), LocalDate.of(2024, 7, 10), 8, TipoVacacion.VACACIONES, EstadoVacacion.REGISTRADA);
             when(service.listarPorSquad(squadId, fechaInicio, fechaFin)).thenReturn(List.of(v1));
 
             // when & then

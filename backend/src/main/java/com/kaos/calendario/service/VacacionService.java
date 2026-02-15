@@ -1,5 +1,10 @@
 package com.kaos.calendario.service;
 
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.util.List;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import com.kaos.calendario.dto.VacacionRequest;
 import com.kaos.calendario.dto.VacacionResponse;
 import com.kaos.calendario.entity.Vacacion;
@@ -9,12 +14,6 @@ import com.kaos.persona.entity.Persona;
 import com.kaos.persona.repository.PersonaRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.time.DayOfWeek;
-import java.time.LocalDate;
-import java.util.List;
 
 /**
  * Servicio para gestión de vacaciones.
@@ -33,12 +32,14 @@ public class VacacionService {
     /**
      * Lista todas las vacaciones con filtros opcionales.
      */
-    public List<VacacionResponse> listar(Long personaId, Long squadId) {
+    public List<VacacionResponse> listar(Long personaId, Long squadId, String fechaInicio, String fechaFin) {
         if (personaId != null) {
             return mapper.toResponseList(repository.findByPersonaId(personaId));
         }
         if (squadId != null) {
-            return mapper.toResponseList(repository.findBySquadIdAndFechaRange(squadId, null, null));
+            LocalDate inicio = fechaInicio != null ? LocalDate.parse(fechaInicio) : null;
+            LocalDate fin = fechaFin != null ? LocalDate.parse(fechaFin) : null;
+            return mapper.toResponseList(repository.findBySquadIdAndFechaRange(squadId, inicio, fin));
         }
         return mapper.toResponseList(repository.findAll());
     }

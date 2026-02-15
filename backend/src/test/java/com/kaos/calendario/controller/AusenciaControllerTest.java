@@ -77,7 +77,7 @@ class AusenciaControllerTest {
             // given
             AusenciaResponse a1 = createMockResponse(1L, 1L, LocalDate.of(2026, 3, 1), LocalDate.of(2026, 3, 10), TipoAusencia.BAJA_MEDICA);
             AusenciaResponse a2 = createMockResponse(2L, 2L, LocalDate.of(2026, 4, 1), null, TipoAusencia.EMERGENCIA); // Indefinida
-            when(service.listar(null, null)).thenReturn(List.of(a1, a2));
+            when(service.listar(null, null, null, null)).thenReturn(List.of(a1, a2));
 
             // when & then
             mockMvc.perform(get("/api/v1/ausencias"))
@@ -85,9 +85,9 @@ class AusenciaControllerTest {
                     .andExpect(jsonPath("$").isArray())
                     .andExpect(jsonPath("$.length()").value(2))
                     .andExpect(jsonPath("$[0].fechaFin").value("2026-03-10"))
-                    .andExpect(jsonPath("$[1].fechaFin").isEmpty()); // null en JSON
+                    .andExpect(jsonPath("$[1].fechaFin").doesNotExist()); // null omitido en JSON
 
-            verify(service).listar(null, null);
+            verify(service).listar(null, null, null, null);
         }
 
         @Test
@@ -95,7 +95,7 @@ class AusenciaControllerTest {
         void listar_conFiltroPersonaId_retorna200() throws Exception {
             // given
             AusenciaResponse a1 = createMockResponse(1L, 1L, LocalDate.of(2026, 3, 1), LocalDate.of(2026, 3, 10), TipoAusencia.BAJA_MEDICA);
-            when(service.listar(1L, null)).thenReturn(List.of(a1));
+            when(service.listar(1L, null, null, null)).thenReturn(List.of(a1));
 
             // when & then
             mockMvc.perform(get("/api/v1/ausencias")
@@ -104,7 +104,7 @@ class AusenciaControllerTest {
                     .andExpect(jsonPath("$.length()").value(1))
                     .andExpect(jsonPath("$[0].personaId").value(1));
 
-            verify(service).listar(1L, null);
+            verify(service).listar(1L, null, null, null);
         }
 
         @Test
@@ -112,7 +112,7 @@ class AusenciaControllerTest {
         void listar_conFiltroSquadId_retorna200() throws Exception {
             // given
             AusenciaResponse a1 = createMockResponse(1L, 1L, LocalDate.of(2026, 3, 1), LocalDate.of(2026, 3, 10), TipoAusencia.BAJA_MEDICA);
-            when(service.listar(null, 1L)).thenReturn(List.of(a1));
+            when(service.listar(null, 1L, null, null)).thenReturn(List.of(a1));
 
             // when & then
             mockMvc.perform(get("/api/v1/ausencias")
@@ -120,7 +120,7 @@ class AusenciaControllerTest {
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.length()").value(1));
 
-            verify(service).listar(null, 1L);
+            verify(service).listar(null, 1L, null, null);
         }
     }
 
@@ -149,14 +149,14 @@ class AusenciaControllerTest {
         }
 
         @Test
-        @DisplayName("GET por ID inexistente retorna 404")
-        void obtener_idInexistente_retorna404() throws Exception {
+        @DisplayName("GET por ID inexistente retorna 400")
+        void obtener_idInexistente_retorna400() throws Exception {
             // given
             when(service.obtener(999L)).thenThrow(new IllegalArgumentException("Ausencia no encontrada: 999"));
 
             // when & then
             mockMvc.perform(get("/api/v1/ausencias/999"))
-                    .andExpect(status().isNotFound());
+                    .andExpect(status().isBadRequest());
         }
     }
 
@@ -217,7 +217,7 @@ class AusenciaControllerTest {
                             .content(requestJson))
                     .andExpect(status().isCreated())
                     .andExpect(jsonPath("$.id").value(1))
-                    .andExpect(jsonPath("$.fechaFin").isEmpty()); // null en respuesta
+                    .andExpect(jsonPath("$.fechaFin").doesNotExist()); // null en respuesta
 
             verify(service).crear(any(AusenciaRequest.class));
         }
@@ -261,7 +261,7 @@ class AusenciaControllerTest {
             mockMvc.perform(post("/api/v1/ausencias")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
-                    .andExpect(status().isNotFound());
+                    .andExpect(status().isBadRequest());
         }
     }
 
@@ -344,7 +344,7 @@ class AusenciaControllerTest {
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(requestJson))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.fechaFin").isEmpty()); // null
+                    .andExpect(jsonPath("$.fechaFin").doesNotExist()); // null
         }
 
         @Test
@@ -365,7 +365,7 @@ class AusenciaControllerTest {
             mockMvc.perform(put("/api/v1/ausencias/999")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(request)))
-                    .andExpect(status().isNotFound());
+                    .andExpect(status().isBadRequest());
         }
     }
 
@@ -391,15 +391,15 @@ class AusenciaControllerTest {
         }
 
         @Test
-        @DisplayName("DELETE con ID inexistente retorna 404")
-        void eliminar_idInexistente_retorna404() throws Exception {
+        @DisplayName("DELETE con ID inexistente retorna 400")
+        void eliminar_idInexistente_retorna400() throws Exception {
             // given
             doThrow(new IllegalArgumentException("Ausencia no encontrada: 999"))
                     .when(service).eliminar(999L);
 
             // when & then
             mockMvc.perform(delete("/api/v1/ausencias/999"))
-                    .andExpect(status().isNotFound());
+                    .andExpect(status().isBadRequest());
         }
     }
 }

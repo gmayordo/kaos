@@ -23,7 +23,7 @@ interface Props {
   onCancel: () => void;
   /** Estado de carga */
   isSubmitting?: boolean;
-  /** Filtrar personas por squad (opcional) */
+  /** ID del squad (opcional, para filtrar personas) */
   squadId?: number;
 }
 
@@ -35,8 +35,8 @@ const tiposVacacion: { value: TipoVacacion; label: string }[] = [
 ];
 
 const estadosVacacion: { value: EstadoVacacion; label: string }[] = [
-  { value: "SOLICITADA", label: "Solicitada" },
   { value: "REGISTRADA", label: "Registrada" },
+  { value: "SOLICITADA", label: "Solicitada" },
 ];
 
 /**
@@ -49,7 +49,6 @@ export const VacacionForm: FC<Props> = ({
   onSubmit,
   onCancel,
   isSubmitting = false,
-  squadId,
 }) => {
   const [formData, setFormData] = useState<VacacionRequest>({
     personaId: vacacion?.personaId || 0,
@@ -124,13 +123,17 @@ export const VacacionForm: FC<Props> = ({
           </button>
         </div>
 
-        <form onSubmit={handleSubmitForm} className="space-y-4">
+        <form onSubmit={handleSubmitForm} role="form" className="space-y-4">
           {/* Persona */}
           <div>
-            <label className="mb-1 block text-sm font-medium text-zinc-700">
+            <label
+              htmlFor="personaId"
+              className="mb-1 block text-sm font-medium text-zinc-700"
+            >
               Persona *
             </label>
             <select
+              id="personaId"
               value={formData.personaId}
               onChange={(e) =>
                 handleChange("personaId", Number.parseInt(e.target.value))
@@ -149,10 +152,14 @@ export const VacacionForm: FC<Props> = ({
 
           {/* Fecha inicio */}
           <div>
-            <label className="mb-1 block text-sm font-medium text-zinc-700">
+            <label
+              htmlFor="fechaInicio"
+              className="mb-1 block text-sm font-medium text-zinc-700"
+            >
               Fecha inicio *
             </label>
             <input
+              id="fechaInicio"
               type="date"
               value={formData.fechaInicio}
               onChange={(e) => handleChange("fechaInicio", e.target.value)}
@@ -163,10 +170,14 @@ export const VacacionForm: FC<Props> = ({
 
           {/* Fecha fin */}
           <div>
-            <label className="mb-1 block text-sm font-medium text-zinc-700">
+            <label
+              htmlFor="fechaFin"
+              className="mb-1 block text-sm font-medium text-zinc-700"
+            >
               Fecha fin *
             </label>
             <input
+              id="fechaFin"
               type="date"
               value={formData.fechaFin}
               onChange={(e) => handleChange("fechaFin", e.target.value)}
@@ -177,10 +188,14 @@ export const VacacionForm: FC<Props> = ({
 
           {/* Tipo */}
           <div>
-            <label className="mb-1 block text-sm font-medium text-zinc-700">
+            <label
+              htmlFor="tipo"
+              className="mb-1 block text-sm font-medium text-zinc-700"
+            >
               Tipo *
             </label>
             <select
+              id="tipo"
               value={formData.tipo}
               onChange={(e) =>
                 handleChange("tipo", e.target.value as TipoVacacion)
@@ -198,10 +213,14 @@ export const VacacionForm: FC<Props> = ({
 
           {/* Estado */}
           <div>
-            <label className="mb-1 block text-sm font-medium text-zinc-700">
+            <label
+              htmlFor="estado"
+              className="mb-1 block text-sm font-medium text-zinc-700"
+            >
               Estado
             </label>
             <select
+              id="estado"
               value={formData.estado}
               onChange={(e) =>
                 handleChange("estado", e.target.value as EstadoVacacion)
@@ -218,10 +237,14 @@ export const VacacionForm: FC<Props> = ({
 
           {/* Comentario */}
           <div>
-            <label className="mb-1 block text-sm font-medium text-zinc-700">
+            <label
+              htmlFor="comentario"
+              className="mb-1 block text-sm font-medium text-zinc-700"
+            >
               Comentario
             </label>
             <textarea
+              id="comentario"
               value={formData.comentario}
               onChange={(e) => handleChange("comentario", e.target.value)}
               placeholder="Opcional..."

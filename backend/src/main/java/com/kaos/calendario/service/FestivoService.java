@@ -7,15 +7,10 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
-import jakarta.persistence.EntityNotFoundException;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import com.kaos.calendario.dto.FestivoCsvError;
 import com.kaos.calendario.dto.FestivoCsvRow;
 import com.kaos.calendario.dto.FestivoCsvUploadResponse;
@@ -25,11 +20,13 @@ import com.kaos.calendario.entity.Festivo;
 import com.kaos.calendario.entity.TipoFestivo;
 import com.kaos.calendario.mapper.FestivoMapper;
 import com.kaos.calendario.repository.FestivoRepository;
-import com.kaos.persona.entity.Persona;
-import com.kaos.persona.repository.PersonaRepository;
+import jakarta.persistence.EntityNotFoundException;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Servicio de negocio para gestión de {@link Festivo}.
+ * Festivos están vinculados a ciudad (calendario laboral por ubicación).
  */
 @Service
 @RequiredArgsConstructor
@@ -39,7 +36,6 @@ public class FestivoService {
 
     private final FestivoRepository repository;
     private final FestivoMapper mapper;
-    private final PersonaRepository personaRepository;
 
     /**
      * Lista festivos con filtros opcionales.
@@ -78,25 +74,22 @@ public class FestivoService {
 
     /**
      * Crea un nuevo festivo.
-     * Valida que las personas existan y que no haya duplicado (fecha + descripción).
+     * Valida que no haya duplicado (fecha + descripción + ciudad).
      */
     @Transactional
     public FestivoResponse crear(FestivoRequest request) {
-        log.info("Creando festivo: {} ({})", request.descripcion(), request.fecha());
+        log.info("Creando festivo: {} ({}) en {}", request.descripcion(), request.fecha(), request.ciudad());
 
         // Validar duplicado
-        if (repository.existsByFechaAndDescripcion(request.fecha(), request.descripcion())) {
+        if (repository.existsByFechaAndDescripcionAndCiudad(
+                request.fecha(), request.descripcion(), request.ciudad())) {
             throw new IllegalArgumentException(
                     "Ya existe un festivo con fecha '" + request.fecha() + 
-                    "' y descripción '" + request.descripcion() + "'");
+                    "', descripción '" + request.descripcion() + 
+                    "' y ciudad '" + request.ciudad() + "'");
         }
 
-        // Validar y cargar personas
-        Set<Persona> personas = cargarPersonas(request.personaIds());
-
         Festivo entity = mapper.toEntity(request);
-        entity.setPersonas(personas);
-
         Festivo saved = repository.save(entity);
         log.info("Festivo creado con id: {}", saved.getId());
         return mapper.toResponse(saved);
@@ -112,21 +105,21 @@ public class FestivoService {
         Festivo entity = repository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Festivo no encontrado con id: " + id));
 
-        // Validar duplicado solo si cambia fecha o descripción
-        if (!entity.getFecha().equals(request.fecha()) || !entity.getDescripcion().equals(request.descripcion())) {
-            if (repository.existsByFechaAndDescripcion(request.fecha(), request.descripcion())) {
+        // Validar duplicado solo si cambia fecha, descripción o ciudad
+        if (!entity.getFecha().equals(request.fecha()) 
+                || !entity.getDescripcion().equals(request.descripcion())
+                || !entity.getCiudad().equals(request.ciudad())) {
+            if (repository.existsByFechaAndDescripcionAndCiudad(
+                    request.fecha(), request.descripcion(), request.ciudad())) {
                 throw new IllegalArgumentException(
                         "Ya existe un festivo con fecha '" + request.fecha() + 
-                        "' y descripción '" + request.descripcion() + "'");
+                        "', descripción '" + request.descripcion() + 
+                        "' y ciudad '" + request.ciudad() + "'");
             }
         }
 
-        // Actualizar campos básicos
+        // Actualizar campos
         mapper.updateEntity(request, entity);
-
-        // Actualizar personas
-        Set<Persona> personas = cargarPersonas(request.personaIds());
-        entity.setPersonas(personas);
 
         Festivo updated = repository.save(entity);
         log.info("Festivo actualizado: {}", id);
@@ -147,27 +140,22 @@ public class FestivoService {
     }
 
     /**
-     * Lista festivos asignados a una persona en un rango de fechas.
+     * Lista festivos de una ciudad en un rango de fechas.
      *
-     * @param personaId   ID de la persona
+     * @param ciudad      nombre de la ciudad
      * @param fechaInicio inicio del rango (nullable)
      * @param fechaFin    fin del rango (nullable)
      */
-    public List<FestivoResponse> listarPorPersona(Long personaId, LocalDate fechaInicio, LocalDate fechaFin) {
-        log.debug("Listando festivos de persona: {} (desde {} hasta {})", personaId, fechaInicio, fechaFin);
-
-        if (!personaRepository.existsById(personaId)) {
-            throw new EntityNotFoundException("Persona no encontrada con id: " + personaId);
-        }
-
-        List<Festivo> festivos = repository.findByPersonaIdAndFechaRange(personaId, fechaInicio, fechaFin);
+    public List<FestivoResponse> listarPorCiudad(String ciudad, LocalDate fechaInicio, LocalDate fechaFin) {
+        log.debug("Listando festivos de ciudad: {} (desde {} hasta {})", ciudad, fechaInicio, fechaFin);
+        List<Festivo> festivos = repository.findByCiudadAndFechaRange(ciudad, fechaInicio, fechaFin);
         return mapper.toResponseList(festivos);
     }
 
     /**
      * Carga masiva de festivos desde CSV.
-     * Formato: fecha;descripcion;tipo;emails_personas (separados por |)
-     * Ejemplo: 2026-01-01;Año Nuevo;NACIONAL;persona1@ehcos.com|persona2@ehcos.com
+     * Formato: fecha;descripcion;tipo;ciudad
+     * Ejemplo: 2026-01-01;Año Nuevo;NACIONAL;Madrid
      * 
      * Procesamiento parcial: festivos duplicados se ignoran, errores no bloquean el resto.
      *
@@ -218,21 +206,25 @@ public class FestivoService {
 
     /**
      * Parsea una línea del CSV en FestivoCsvRow.
-     * Formato: fecha;descripcion;tipo;emails
+     * Formato: fecha;descripcion;tipo;ciudad
      */
     private FestivoCsvRow parseCsvRow(String linea) {
         String[] partes = linea.split(";");
         if (partes.length != 4) {
-            throw new IllegalArgumentException("Formato inválido. Esperado: fecha;descripcion;tipo;emails");
+            throw new IllegalArgumentException("Formato inválido. Esperado: fecha;descripcion;tipo;ciudad");
         }
 
         try {
             LocalDate fecha = LocalDate.parse(partes[0].trim());
             String descripcion = partes[1].trim();
             TipoFestivo tipo = TipoFestivo.valueOf(partes[2].trim().toUpperCase());
-            List<String> emails = List.of(partes[3].trim().split("\\|"));
+            String ciudad = partes[3].trim();
 
-            return new FestivoCsvRow(fecha, descripcion, tipo, emails);
+            if (ciudad.isBlank()) {
+                throw new IllegalArgumentException("Ciudad no puede estar vacía");
+            }
+
+            return new FestivoCsvRow(fecha, descripcion, tipo, ciudad);
         } catch (DateTimeParseException e) {
             throw new IllegalArgumentException("Fecha inválida: " + partes[0]);
         } catch (IllegalArgumentException e) {
@@ -246,17 +238,9 @@ public class FestivoService {
      */
     private void procesarFilaCsv(FestivoCsvRow row, int numeroFila, List<FestivoCsvError> errores) {
         // Verificar duplicado - ignorar sin error
-        if (repository.existsByFechaAndDescripcion(row.fecha(), row.descripcion())) {
+        if (repository.existsByFechaAndDescripcionAndCiudad(row.fecha(), row.descripcion(), row.ciudad())) {
             log.debug("Fila {}: festivo duplicado, ignorando", numeroFila);
             return;
-        }
-
-        // Buscar personas por email
-        Set<Persona> personas = new HashSet<>();
-        for (String email : row.emails()) {
-            Persona persona = personaRepository.findByEmail(email)
-                    .orElseThrow(() -> new IllegalArgumentException("Persona no encontrada con email: " + email));
-            personas.add(persona);
         }
 
         // Crear festivo
@@ -264,24 +248,10 @@ public class FestivoService {
                 .fecha(row.fecha())
                 .descripcion(row.descripcion())
                 .tipo(row.tipo())
-                .personas(personas)
+                .ciudad(row.ciudad())
                 .build();
 
         repository.save(festivo);
-        log.debug("Fila {}: festivo creado", numeroFila);
-    }
-
-    /**
-     * Carga y valida que todas las personas existan.
-     * Lanza excepción si alguna no existe.
-     */
-    private Set<Persona> cargarPersonas(List<Long> personaIds) {
-        Set<Persona> personas = new HashSet<>();
-        for (Long personaId : personaIds) {
-            Persona persona = personaRepository.findById(personaId)
-                    .orElseThrow(() -> new IllegalArgumentException("Persona no encontrada con id: " + personaId));
-            personas.add(persona);
-        }
-        return personas;
+        log.debug("Fila {}: festivo creado para ciudad {}", numeroFila, row.ciudad());
     }
 }

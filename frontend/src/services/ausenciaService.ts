@@ -79,9 +79,9 @@ export const ausenciaService = {
    * Obtiene ausencias de un squad en un rango de fechas
    */
   porSquad: async (squadId: number, fechaInicio: string, fechaFin: string) => {
-    const { data } = await api.get<AusenciaResponse[]>(
-      `/ausencias/squad/${squadId}?fechaInicio=${fechaInicio}&fechaFin=${fechaFin}`,
+    const { data } = await api.get<PageResponse<AusenciaResponse>>(
+      `/ausencias?squadId=${squadId}&fechaInicio=${fechaInicio}&fechaFin=${fechaFin}`,
     );
-    return data;
+    return data.content;
   },
 };

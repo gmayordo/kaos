@@ -6,10 +6,13 @@ package com.kaos.calendario.entity;
 public enum TipoVacacion {
     /** Vacaciones reglamentarias */
     VACACIONES,
-    
+
+    /** Asuntos propios */
+    ASUNTOS_PROPIOS,
+
     /** Libre disposición */
     LIBRE_DISPOSICION,
-    
-    /** Otras ausencias */
-    OTROS
+
+    /** Permiso */
+    PERMISO
 }

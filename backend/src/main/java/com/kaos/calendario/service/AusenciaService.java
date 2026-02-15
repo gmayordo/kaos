@@ -30,12 +30,14 @@ public class AusenciaService {
     /**
      * Lista todas las ausencias con filtros opcionales.
      */
-    public List<AusenciaResponse> listar(Long personaId, Long squadId) {
+    public List<AusenciaResponse> listar(Long personaId, Long squadId, String fechaInicio, String fechaFin) {
         if (personaId != null) {
             return mapper.toResponseList(repository.findByPersonaId(personaId));
         }
         if (squadId != null) {
-            return mapper.toResponseList(repository.findBySquadIdAndFechaRange(squadId, null, null));
+            LocalDate inicio = fechaInicio != null ? LocalDate.parse(fechaInicio) : null;
+            LocalDate fin = fechaFin != null ? LocalDate.parse(fechaFin) : null;
+            return mapper.toResponseList(repository.findBySquadIdAndFechaRange(squadId, inicio, fin));
         }
         return mapper.toResponseList(repository.findAll());
     }

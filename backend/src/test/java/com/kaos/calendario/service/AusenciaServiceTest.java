@@ -473,7 +473,7 @@ class AusenciaServiceTest {
             when(mapper.toResponseList(ausencias)).thenReturn(List.of(responseMock));
 
             // when
-            List<AusenciaResponse> result = service.listar(null, null);
+            List<AusenciaResponse> result = service.listar(null, null, null, null);
 
             // then
             assertThat(result).hasSize(1);
@@ -489,7 +489,7 @@ class AusenciaServiceTest {
             when(mapper.toResponseList(ausencias)).thenReturn(List.of(responseMock));
 
             // when
-            List<AusenciaResponse> result = service.listar(1L, null);
+            List<AusenciaResponse> result = service.listar(1L, null, null, null);
 
             // then
             assertThat(result).hasSize(1);
@@ -506,7 +506,7 @@ class AusenciaServiceTest {
             when(mapper.toResponseList(ausencias)).thenReturn(List.of(responseMock));
 
             // when
-            List<AusenciaResponse> result = service.listar(null, 5L);
+            List<AusenciaResponse> result = service.listar(null, 5L, null, null);
 
             // then
             assertThat(result).hasSize(1);

@@ -1,20 +1,18 @@
 package com.kaos.calendario.dto;
 
-import com.kaos.calendario.entity.TipoFestivo;
-
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.List;
+import com.kaos.calendario.entity.TipoFestivo;
 
 /**
- * Response de festivo con personas asignadas.
+ * Response de festivo por ciudad.
  */
 public record FestivoResponse(
         Long id,
         LocalDate fecha,
         String descripcion,
         TipoFestivo tipo,
-        List<PersonaBasicInfo> personas,
+        String ciudad,
         LocalDateTime createdAt,
         LocalDateTime updatedAt
 ) {}

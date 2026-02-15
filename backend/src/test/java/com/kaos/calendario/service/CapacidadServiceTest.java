@@ -8,7 +8,6 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -314,7 +313,7 @@ class CapacidadServiceTest {
                     .fecha(anioNuevo)
                     .descripcion("Año Nuevo")
                     .tipo(TipoFestivo.NACIONAL)
-                    .personas(Set.of(personaMock))
+                    .ciudad("Zaragoza")
                     .build();
 
             when(squadRepository.findById(1L)).thenReturn(Optional.of(squadMock));
@@ -347,7 +346,7 @@ class CapacidadServiceTest {
                     .fecha(fecha)
                     .descripcion("Festivo regional")
                     .tipo(TipoFestivo.REGIONAL)
-                    .personas(Set.of(otraPersona)) // No incluye personaMock
+                    .ciudad("Valencia") // Ciudad diferente, no aplica
                     .build();
 
             when(squadRepository.findById(1L)).thenReturn(Optional.of(squadMock));
@@ -387,7 +386,7 @@ class CapacidadServiceTest {
                     .fechaFin(LocalDate.of(2026, 3, 14))
                     .diasLaborables(5)
                     .tipo(TipoVacacion.VACACIONES)
-                    .estado(EstadoVacacion.APROBADA)
+                    .estado(EstadoVacacion.REGISTRADA)
                     .build();
 
             when(squadRepository.findById(1L)).thenReturn(Optional.of(squadMock));
@@ -420,7 +419,7 @@ class CapacidadServiceTest {
                     .fechaFin(LocalDate.of(2026, 3, 14)) // Vie (5 días)
                     .diasLaborables(5)
                     .tipo(TipoVacacion.VACACIONES)
-                    .estado(EstadoVacacion.APROBADA)
+                    .estado(EstadoVacacion.REGISTRADA)
                     .build();
 
             when(squadRepository.findById(1L)).thenReturn(Optional.of(squadMock));
@@ -637,7 +636,7 @@ class CapacidadServiceTest {
                     .fechaFin(fecha.plusDays(5))
                     .diasLaborables(5)
                     .tipo(TipoVacacion.VACACIONES)
-                    .estado(EstadoVacacion.APROBADA)
+                    .estado(EstadoVacacion.REGISTRADA)
                     .build();
 
             when(squadRepository.findById(1L)).thenReturn(Optional.of(squadMock));

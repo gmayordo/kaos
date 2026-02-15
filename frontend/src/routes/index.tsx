@@ -14,6 +14,7 @@ function IndexPage() {
   // Generar logos aleatorios para las tarjetas
   const squadsLogo = getRandomLogoPair().kaos;
   const personasLogo = getRandomLogoPair().kaos;
+  const calendarioLogo = getRandomLogoPair().kaos;
   const configuracionLogo = getRandomLogoPair().kaos;
   // Query para squads
   const { data: squadsData, isLoading: isLoadingSquads } = useQuery({
@@ -89,7 +90,7 @@ function IndexPage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-8">
         <DashboardCard
           iconSrc={squadsLogo}
           title="Squads"
@@ -106,6 +107,15 @@ function IndexPage() {
           count={personasCount}
           isLoading={isLoadingPersonas}
           href="/personas"
+        />
+
+        <DashboardCard
+          iconSrc={calendarioLogo}
+          title="Calendario"
+          description="Gestiona vacaciones y ausencias del equipo"
+          count={0}
+          isLoading={false}
+          href="/calendario"
         />
 
         <DashboardCard
