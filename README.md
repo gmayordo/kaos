@@ -154,29 +154,30 @@ DELETE /api/v1/perfiles-horario/{id} → Eliminar perfil horario
 
 ## Backend (Java + Spring Boot) - JaCoCo Coverage
 
-| Métrica       | Cobertura | Estado |
-| ------------- | --------- | ------ |
-| **Instrucciones** | 99% | 🟢 Excelente |
-| **Ramas** | 94% | 🟢 Muy Bueno |
-| **Líneas** | 99% | 🟢 Excelente |
-| **Métodos** | 100% | 🟢 Perfecto |
-| **Clases** | 100% | 🟢 Perfecto |
+| Métrica           | Cobertura | Estado       |
+| ----------------- | --------- | ------------ |
+| **Instrucciones** | 99%       | 🟢 Excelente |
+| **Ramas**         | 94%       | 🟢 Muy Bueno |
+| **Líneas**        | 99%       | 🟢 Excelente |
+| **Métodos**       | 100%      | 🟢 Perfecto  |
+| **Clases**        | 100%      | 🟢 Perfecto  |
 
 **Cobertura por paquete:**
 
-| Paquete | Instrucciones | Ramas | Estado |
-| ------- | ------------- | ----- | ------ |
-| `squad.service` | 97% | 87% | 🟡 Bueno |
-| `dedicacion.service` | 100% | 100% | 🟢 Perfecto |
-| `persona.service` | 100% | 100% | 🟢 Perfecto |
-| `horario.service` | 100% | 100% | 🟢 Perfecto |
-| `persona.controller` | 100% | 75% | 🟡 Bueno |
-| `dedicacion.controller` | 100% | N/A | 🟢 Perfecto |
-| `squad.controller` | 100% | N/A | 🟢 Perfecto |
-| `horario.controller` | 100% | N/A | 🟢 Perfecto |
-| `common.exception` | 100% | N/A | 🟢 Perfecto |
+| Paquete                 | Instrucciones | Ramas | Estado      |
+| ----------------------- | ------------- | ----- | ----------- |
+| `squad.service`         | 97%           | 87%   | 🟡 Bueno    |
+| `dedicacion.service`    | 100%          | 100%  | 🟢 Perfecto |
+| `persona.service`       | 100%          | 100%  | 🟢 Perfecto |
+| `horario.service`       | 100%          | 100%  | 🟢 Perfecto |
+| `persona.controller`    | 100%          | 75%   | 🟡 Bueno    |
+| `dedicacion.controller` | 100%          | N/A   | 🟢 Perfecto |
+| `squad.controller`      | 100%          | N/A   | 🟢 Perfecto |
+| `horario.controller`    | 100%          | N/A   | 🟢 Perfecto |
+| `common.exception`      | 100%          | N/A   | 🟢 Perfecto |
 
 **Tests implementados:**
+
 - ✅ Unit tests para servicios (SquadService, PersonaService, SquadMemberService, PerfilHorarioService)
 - ✅ Integration tests para controladores con mocking
 - ✅ Tests de repositorios con datos de prueba
@@ -185,13 +186,14 @@ DELETE /api/v1/perfiles-horario/{id} → Eliminar perfil horario
 
 ## Frontend (React + TypeScript) - Vitest Coverage
 
-| Archivo | Statements | Branches | Functions | Lines | Estado |
-| ------- | ---------- | -------- | --------- | ----- | ------ |
-| `logo-manager.ts` | 92.45% | 100% | 80% | 92.45% | 🟢 Excelente |
-| `LogoDisplay.tsx` | 100% | 100% | 100% | 100% | 🟢 Perfecto |
-| **Total** | **96.2%** | **100%** | **90%** | **96.2%** | 🟢 Excelente |
+| Archivo           | Statements | Branches | Functions | Lines     | Estado       |
+| ----------------- | ---------- | -------- | --------- | --------- | ------------ |
+| `logo-manager.ts` | 92.45%     | 100%     | 80%       | 92.45%    | 🟢 Excelente |
+| `LogoDisplay.tsx` | 100%       | 100%     | 100%      | 100%      | 🟢 Perfecto  |
+| **Total**         | **96.2%**  | **100%** | **90%**   | **96.2%** | 🟢 Excelente |
 
 **Resultados de testing:**
+
 ```
 ✅ TODOS LOS TESTS PASARON
  ✓ src/routes/index.test.tsx  (67 tests) ✅
@@ -204,6 +206,7 @@ DELETE /api/v1/perfiles-horario/{id} → Eliminar perfil horario
 ```
 
 **Tests implementados:**
+
 - ✅ **67 tests** en rutas (navegación, estados, interacciones)
 - ✅ **16 tests** en logo-manager (lógica de selección aleatoria, tipos, URLs)
 - ✅ **25 tests** en LogoDisplay (renderizado, props, estados)
