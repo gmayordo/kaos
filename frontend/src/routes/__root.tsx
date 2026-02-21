@@ -1,5 +1,13 @@
 import { createRootRoute, Link, Outlet } from "@tanstack/react-router";
-import { Briefcase, Calendar, Home, Settings, Users } from "lucide-react";
+import {
+  Briefcase,
+  Calendar,
+  CalendarDays,
+  Clock,
+  Home,
+  Info,
+  Users,
+} from "lucide-react";
 
 export const Route = createRootRoute({
   component: RootLayout,
@@ -37,8 +45,22 @@ function RootLayout() {
           <NavLink to="/calendario" icon={Calendar}>
             Calendario
           </NavLink>
-          <NavLink to="/configuracion" icon={Settings}>
-            Configuración
+
+          {/* Sección Configuración */}
+          <div className="pt-2 pb-1 px-3">
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">
+              Configuración
+            </p>
+          </div>
+          <NavLink to="/configuracion" icon={Clock}>
+            Perfiles Horario
+          </NavLink>
+          <NavLink to="/configuracion/festivos" icon={CalendarDays}>
+            Festivos
+          </NavLink>
+
+          <NavLink to="/about" icon={Info}>
+            Acerca de
           </NavLink>
         </nav>
 

@@ -1,8 +1,5 @@
 package com.kaos.persona.repository;
 
-import com.kaos.persona.entity.Persona;
-import com.kaos.persona.entity.Rol;
-import com.kaos.persona.entity.Seniority;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -10,6 +7,9 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import com.kaos.persona.entity.Persona;
+import com.kaos.persona.entity.Rol;
+import com.kaos.persona.entity.Seniority;
 
 /**
  * Repositorio JPA para {@link Persona}.
@@ -52,4 +52,10 @@ public interface PersonaRepository extends JpaRepository<Persona, Long>, JpaSpec
             @Param("activo") Boolean activo,
             Pageable pageable
     );
+
+    /** Búsqueda exacta por nombre, sin distinción de mayúsculas. */
+    java.util.Optional<Persona> findByNombreIgnoreCase(String nombre);
+
+    /** Búsqueda parcial por nombre, sin distinción de mayúsculas. */
+    java.util.List<Persona> findByNombreContainingIgnoreCase(String nombre);
 }

@@ -107,6 +107,7 @@ export interface PersonaResponse {
   idJira?: string;
   perfilHorarioId: number;
   perfilHorarioNombre: string;
+  ciudad: string;
   seniority: Seniority;
   skills?: string;
   costeHora?: number;
@@ -121,6 +122,7 @@ export interface PersonaRequest {
   nombre: string;
   email: string;
   idJira?: string;
+  ciudad: string;
   perfilHorarioId: number;
   seniority: Seniority;
   skills?: string;
@@ -209,7 +211,7 @@ export interface VacacionResponse {
   tipo: TipoVacacion;
   estado: EstadoVacacion;
   comentario?: string;
-  dias: number;
+  diasLaborables: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -275,4 +277,25 @@ export interface CapacidadSquadResponse {
   horasTotales: number;
   diasLaborables: number;
   personas: CapacidadPersonaResponse[];
+}
+// ============= Excel Import =============
+
+export interface ExcelPersonaMatch {
+  nombreExcel: string;
+  personaId: number;
+  personaNombre: string;
+}
+
+export interface ExcelAnalysisResponse {
+  totalFilasPersona: number;
+  personasResueltas: ExcelPersonaMatch[];
+  personasNoResueltas: string[];
+}
+
+export interface ExcelImportResponse {
+  personasProcesadas: number;
+  vacacionesCreadas: number;
+  ausenciasCreadas: number;
+  personasNoEncontradas: string[];
+  errores: string[];
 }

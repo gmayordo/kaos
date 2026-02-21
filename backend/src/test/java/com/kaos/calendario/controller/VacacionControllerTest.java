@@ -8,6 +8,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -29,6 +30,7 @@ import com.kaos.calendario.dto.VacacionRequest;
 import com.kaos.calendario.dto.VacacionResponse;
 import com.kaos.calendario.entity.EstadoVacacion;
 import com.kaos.calendario.entity.TipoVacacion;
+import com.kaos.calendario.service.ExcelImportService;
 import com.kaos.calendario.service.VacacionService;
 
 /**
@@ -48,6 +50,9 @@ class VacacionControllerTest {
 
     @MockBean
     private VacacionService service;
+
+    @MockBean
+    private ExcelImportService excelImportService;
 
     private VacacionResponse createMockResponse(Long id, Long personaId, LocalDate inicio, LocalDate fin, Integer dias) {
         return new VacacionResponse(
@@ -391,6 +396,139 @@ class VacacionControllerTest {
             // when & then
             mockMvc.perform(delete("/api/v1/vacaciones/999"))
                     .andExpect(status().isBadRequest());
+        }
+    }
+
+    @Nested
+    @DisplayName("Endpoints Excel Import")
+    class ExcelImportTests {
+
+        @Test
+        @DisplayName("POST /analizar-excel — análisis dry-run exitoso")
+        void analizarExcel_archivoValido() throws Exception {
+            // given
+            byte[] excelContent = "fichero-mock".getBytes();
+            var analysisResponse = new com.kaos.calendario.dto.ExcelAnalysisResponse(
+                    2,
+                    List.of(
+                            new com.kaos.calendario.dto.ExcelAnalysisResponse.PersonaMatch(
+                                    "Alberto Rodriguez González", 1L, "Alberto Rodriguez González"
+                            )
+                    ),
+                    List.of("Persona Desconocida")
+            );
+
+            when(excelImportService.analizarExcel(any(), eq(2026)))
+                    .thenReturn(analysisResponse);
+
+            // when & then
+            mockMvc.perform(multipart("/api/v1/vacaciones/analizar-excel")
+                    .file(new org.springframework.mock.web.MockMultipartFile(
+                            "file", "datos.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", excelContent
+                    ))
+                    .param("año", "2026"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.totalFilasPersona").value(2))
+                    .andExpect(jsonPath("$.personasResueltas.length()").value(1))
+                    .andExpect(jsonPath("$.personasNoResueltas.length()").value(1));
+        }
+
+        @Test
+        @DisplayName("POST /analizar-excel — archivo vacío retorna 400")
+        void analizarExcel_archivoVacio() throws Exception {
+            // when & then
+            mockMvc.perform(multipart("/api/v1/vacaciones/analizar-excel")
+                    .file(new org.springframework.mock.web.MockMultipartFile(
+                            "file", "vacio.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", new byte[0]
+                    ))
+                    .param("año", "2026"))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.message").exists());
+        }
+
+        @Test
+        @DisplayName("POST /importar-excel — importación sin mappings")
+        void importarExcel_sinMappings() throws Exception {
+            // given
+            byte[] excelContent = "fichero-mock".getBytes();
+            var importResponse = new com.kaos.calendario.dto.ExcelImportResponse(
+                    1, 2, 0, List.of(), List.of()
+            );
+
+            when(excelImportService.importarExcel(any(), eq(2026), any()))
+                    .thenReturn(importResponse);
+
+            // when & then
+            mockMvc.perform(multipart("/api/v1/vacaciones/importar-excel")
+                    .file(new org.springframework.mock.web.MockMultipartFile(
+                            "file", "datos.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", excelContent
+                    ))
+                    .param("año", "2026"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.personasProcesadas").value(1))
+                    .andExpect(jsonPath("$.vacacionesCreadas").value(2));
+        }
+
+        @Test
+        @DisplayName("POST /importar-excel — con mappings JSON")
+        void importarExcel_conMappingsJSON() throws Exception {
+            // given
+            byte[] excelContent = "fichero-mock".getBytes();
+            String mappingsJson = "{\"Alberto Rodriguez González\": 1}";
+            var importResponse = new com.kaos.calendario.dto.ExcelImportResponse(
+                    1, 3, 1, List.of(), List.of()
+            );
+
+            when(excelImportService.importarExcel(any(), eq(2026), any()))
+                    .thenReturn(importResponse);
+
+            // when & then
+            mockMvc.perform(multipart("/api/v1/vacaciones/importar-excel")
+                    .file(new org.springframework.mock.web.MockMultipartFile(
+                            "file", "datos.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", excelContent
+                    ))
+                    .param("año", "2026")
+                    .param("mappingsJson", mappingsJson))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.personasProcesadas").value(1))
+                    .andExpect(jsonPath("$.vacacionesCreadas").value(3))
+                    .andExpect(jsonPath("$.ausenciasCreadas").value(1));
+        }
+
+        @Test
+        @DisplayName("POST /importar-excel — mappings JSON inválido retorna 400")
+        void importarExcel_mappingsJSONInvalido() throws Exception {
+            // when & then
+            mockMvc.perform(multipart("/api/v1/vacaciones/importar-excel")
+                    .file(new org.springframework.mock.web.MockMultipartFile(
+                            "file", "datos.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", "mock".getBytes()
+                    ))
+                    .param("año", "2026")
+                    .param("mappingsJson", "{ INVALID JSON }"))
+                    .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        @DisplayName("POST /importar-excel — personas no encontradas en response")
+        void importarExcel_personasNoEncontradas() throws Exception {
+            // given
+            byte[] excelContent = "fichero-mock".getBytes();
+            var importResponse = new com.kaos.calendario.dto.ExcelImportResponse(
+                    2, 3, 1, List.of("Persona Desconocida"), List.of()
+            );
+
+            when(excelImportService.importarExcel(any(), eq(2026), any()))
+                    .thenReturn(importResponse);
+
+            // when & then
+            mockMvc.perform(multipart("/api/v1/vacaciones/importar-excel")
+                    .file(new org.springframework.mock.web.MockMultipartFile(
+                            "file", "datos.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", excelContent
+                    ))
+                    .param("año", "2026"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.personasNoEncontradas.length()").value(1))
+                    .andExpect(jsonPath("$.personasNoEncontradas[0]").value("Persona Desconocida"));
         }
     }
 }

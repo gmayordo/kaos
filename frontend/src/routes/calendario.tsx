@@ -30,6 +30,7 @@ export const Route = createFileRoute("/calendario")({
 function CalendarioPage() {
   const queryClient = useQueryClient();
   const [squadId, setSquadId] = useState<number | null>(null);
+  const [personaFiltroId, setPersonaFiltroId] = useState<number | null>(null);
   const [mes, setMes] = useState(new Date().getMonth());
   const [anio, setAnio] = useState(new Date().getFullYear());
   const [isVacacionFormOpen, setIsVacacionFormOpen] = useState(false);
@@ -48,6 +49,13 @@ function CalendarioPage() {
     queryFn: () => squadService.listar(0, 100),
   });
 
+  // Query personas del squad seleccionado (para el filtro)
+  const { data: personasSquad } = useQuery({
+    queryKey: ["personas", "squad", squadId],
+    queryFn: () => personaService.listar(0, 200, { squadId: squadId! }),
+    enabled: !!squadId,
+  });
+
   // Query personas (para formularios)
   const { data: personas } = useQuery({
     queryKey: ["personas"],
@@ -55,7 +63,9 @@ function CalendarioPage() {
   });
 
   // Query vacaciones
-  const { data: vacaciones, isLoading: isLoadingVacaciones } = useQuery({
+  const { data: vacaciones, isLoading: isLoadingVacaciones } = useQuery<
+    VacacionResponse[]
+  >({
     queryKey: ["vacaciones", squadId, mes, anio],
     queryFn: () => {
       if (!squadId) return Promise.resolve([]);
@@ -65,7 +75,9 @@ function CalendarioPage() {
   });
 
   // Query ausencias
-  const { data: ausencias, isLoading: isLoadingAusencias } = useQuery({
+  const { data: ausencias, isLoading: isLoadingAusencias } = useQuery<
+    AusenciaResponse[]
+  >({
     queryKey: ["ausencias", squadId, mes, anio],
     queryFn: () => {
       if (!squadId) return Promise.resolve([]);
@@ -80,6 +92,7 @@ function CalendarioPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["vacaciones"] });
       setIsVacacionFormOpen(false);
+      setTipoRegistroSeleccionado(null);
     },
   });
 
@@ -88,6 +101,7 @@ function CalendarioPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["ausencias"] });
       setIsAusenciaFormOpen(false);
+      setTipoRegistroSeleccionado(null);
     },
   });
 
@@ -124,8 +138,7 @@ function CalendarioPage() {
   };
 
   const handleRegistrar = () => {
-    setTipoRegistroSeleccionado("vacacion"); // Por defecto abre el selector
-    setIsVacacionFormOpen(true);
+    setTipoRegistroSeleccionado("vacacion"); // Muestra el selector de tipo
   };
 
   const handleSubmitVacacion = (data: VacacionRequest) => {
@@ -162,6 +175,14 @@ function CalendarioPage() {
 
   const isLoading = isLoadingVacaciones || isLoadingAusencias;
 
+  // Vacaciones y ausencias ya están tipadas como arrays — aplicar filtro por persona
+  const vacacionesList = (vacaciones ?? []).filter(
+    (v) => !personaFiltroId || v.personaId === personaFiltroId,
+  );
+  const ausenciasList = (ausencias ?? []).filter(
+    (a) => !personaFiltroId || a.personaId === personaFiltroId,
+  );
+
   return (
     <div className="space-y-6">
       {/* Page Header */}
@@ -182,16 +203,17 @@ function CalendarioPage() {
       </div>
 
       {/* Filter Bar */}
-      <div className="flex items-center gap-4">
+      <div className="flex flex-wrap items-center gap-4">
         <div className="flex items-center gap-2">
           <label className="text-sm font-medium text-zinc-700">Squad:</label>
           <select
             value={squadId || ""}
-            onChange={(e) =>
+            onChange={(e) => {
               setSquadId(
                 e.target.value ? Number.parseInt(e.target.value) : null,
-              )
-            }
+              );
+              setPersonaFiltroId(null); // reset persona al cambiar squad
+            }}
             className="rounded-md border border-zinc-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
           >
             <option value="">Seleccionar squad...</option>
@@ -202,6 +224,31 @@ function CalendarioPage() {
             ))}
           </select>
         </div>
+
+        {/* Filtro por persona — solo visible cuando hay squad */}
+        {squadId && (
+          <div className="flex items-center gap-2">
+            <label className="text-sm font-medium text-zinc-700">
+              Persona:
+            </label>
+            <select
+              value={personaFiltroId || ""}
+              onChange={(e) =>
+                setPersonaFiltroId(
+                  e.target.value ? Number.parseInt(e.target.value) : null,
+                )
+              }
+              className="rounded-md border border-zinc-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            >
+              <option value="">Todos</option>
+              {personasSquad?.content.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.nombre}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         <div className="flex items-center gap-2">
           <button
@@ -262,8 +309,8 @@ function CalendarioPage() {
               <h3 className="font-semibold">Vacaciones</h3>
             </div>
             <div className="divide-y divide-zinc-100">
-              {vacaciones && vacaciones.length > 0 ? (
-                vacaciones.map((vacacion: VacacionResponse) => (
+              {vacacionesList.length > 0 ? (
+                vacacionesList.map((vacacion: VacacionResponse) => (
                   <div
                     key={vacacion.id}
                     className="flex items-center justify-between px-4 py-3 hover:bg-zinc-50"
@@ -282,8 +329,8 @@ function CalendarioPage() {
                         </div>
                         <div className="text-sm text-zinc-600">
                           {formatFecha(vacacion.fechaInicio)} -{" "}
-                          {formatFecha(vacacion.fechaFin)} ({vacacion.dias}{" "}
-                          días)
+                          {formatFecha(vacacion.fechaFin)} (
+                          {vacacion.diasLaborables} días)
                         </div>
                         {vacacion.comentario && (
                           <div className="text-sm text-zinc-500">
@@ -319,8 +366,8 @@ function CalendarioPage() {
               <h3 className="font-semibold">Ausencias</h3>
             </div>
             <div className="divide-y divide-zinc-100">
-              {ausencias && ausencias.length > 0 ? (
-                ausencias.map((ausencia: AusenciaResponse) => (
+              {ausenciasList.length > 0 ? (
+                ausenciasList.map((ausencia: AusenciaResponse) => (
                   <div
                     key={ausencia.id}
                     className="flex items-center justify-between px-4 py-3 hover:bg-zinc-50"
