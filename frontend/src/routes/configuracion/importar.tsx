@@ -113,7 +113,7 @@ function ImportarExcelPage() {
 
   const showTooltip = (
     e: React.MouseEvent<HTMLButtonElement>,
-    message: string
+    message: string,
   ) => {
     const rect = e.currentTarget.getBoundingClientRect();
     setTooltip({ show: message, x: rect.left, y: rect.top - 40 });
@@ -122,7 +122,11 @@ function ImportarExcelPage() {
 
   const handleImportar = () => {
     if (!selectedFile) return;
-    importarMutation.mutate({ file: selectedFile, año, mappings: manualMappings });
+    importarMutation.mutate({
+      file: selectedFile,
+      año,
+      mappings: manualMappings,
+    });
   };
 
   const handleReset = () => {
@@ -179,9 +183,16 @@ function ImportarExcelPage() {
 
       {/* ── PASO 1: subir fichero ── */}
       {step === "upload" && (
-        <form onSubmit={handleAnalizar} className="space-y-5 animate-in fade-in duration-300">
+        <form
+          onSubmit={handleAnalizar}
+          className="space-y-5 animate-in fade-in duration-300"
+        >
           {/* Instrucciones */}
-          <div className="bg-muted/40 border rounded-lg p-4 space-y-2 text-sm" role="region" aria-label="Instrucciones de formato">
+          <div
+            className="bg-muted/40 border rounded-lg p-4 space-y-2 text-sm"
+            role="region"
+            aria-label="Instrucciones de formato"
+          >
             <p className="font-semibold">Formatos admitidos:</p>
             <ul className="list-disc list-inside space-y-1 text-muted-foreground">
               <li>
@@ -246,7 +257,9 @@ function ImportarExcelPage() {
                     <p className="font-medium text-sm">
                       Haz clic para seleccionar
                     </p>
-                    <p className="text-xs text-muted-foreground">.xlsx o .xls</p>
+                    <p className="text-xs text-muted-foreground">
+                      .xlsx o .xls
+                    </p>
                   </>
                 )}
               </div>
@@ -274,7 +287,10 @@ function ImportarExcelPage() {
                 type="button"
                 className="text-muted-foreground hover:text-foreground text-xs cursor-help transition-colors"
                 onClick={(e) =>
-                  showTooltip(e, "Formato fiscal: 2026 es FY2026 (ene-dic 2026)")
+                  showTooltip(
+                    e,
+                    "Formato fiscal: 2026 es FY2026 (ene-dic 2026)",
+                  )
                 }
               >
                 ℹ
@@ -287,7 +303,9 @@ function ImportarExcelPage() {
               value={año}
               onChange={(e) => handleYearChange(Number(e.target.value))}
               className={`w-full sm:w-36 px-3 py-2 border rounded-md text-sm bg-background transition-colors ${
-                yearError ? "border-destructive focus:ring-destructive/20" : "border-border"
+                yearError
+                  ? "border-destructive focus:ring-destructive/20"
+                  : "border-border"
               }`}
               aria-label="Año fiscal de referencia"
               aria-describedby={yearError ? "year-error" : undefined}
@@ -305,16 +323,22 @@ function ImportarExcelPage() {
 
           <button
             type="submit"
-            disabled={!selectedFile || analizarMutation.isPending || !!yearError}
+            disabled={
+              !selectedFile || analizarMutation.isPending || !!yearError
+            }
             className="px-5 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
           >
-            {analizarMutation.isPending && <span className="inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />}
+            {analizarMutation.isPending && (
+              <span className="inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+            )}
             {analizarMutation.isPending ? "Analizando…" : "Analizar Excel →"}
           </button>
 
           {analizarMutation.isPending && (
             <div className="space-y-3 animate-in fade-in">
-              <div className="text-xs text-muted-foreground">Cargando análisis...</div>
+              <div className="text-xs text-muted-foreground">
+                Cargando análisis...
+              </div>
               <div className="space-y-2">
                 <div className="h-4 bg-muted rounded animate-pulse" />
                 <div className="h-4 bg-muted rounded animate-pulse w-5/6" />
@@ -347,7 +371,9 @@ function ImportarExcelPage() {
             <StatCard
               label="Sin resolver"
               value={analysis.personasNoResueltas.length}
-              color={analysis.personasNoResueltas.length > 0 ? "warn" : "success"}
+              color={
+                analysis.personasNoResueltas.length > 0 ? "warn" : "success"
+              }
             />
           </div>
 
@@ -432,7 +458,9 @@ function ImportarExcelPage() {
               disabled={importarMutation.isPending}
               className="px-5 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              {importarMutation.isPending ? "Importando…" : "Confirmar e Importar"}
+              {importarMutation.isPending
+                ? "Importando…"
+                : "Confirmar e Importar"}
             </button>
             <button
               onClick={handleReset}
@@ -546,7 +574,10 @@ function StepIndicator({ current }: { current: Step }) {
     { id: "result", label: "3. Resultado" },
   ];
   return (
-    <nav className="flex items-center gap-0 flex-wrap" aria-label="Pasos del proceso de importación">
+    <nav
+      className="flex items-center gap-0 flex-wrap"
+      aria-label="Pasos del proceso de importación"
+    >
       {steps.map((s, i) => (
         <div key={s.id} className="flex items-center">
           <div
@@ -562,9 +593,11 @@ function StepIndicator({ current }: { current: Step }) {
             {current > s.id ? "✓" : s.label}
           </div>
           {i < steps.length - 1 && (
-            <div className={`w-6 h-px mx-1 transition-colors ${
-              current > s.id ? "bg-green-500/40" : "bg-border"
-            }`} />
+            <div
+              className={`w-6 h-px mx-1 transition-colors ${
+                current > s.id ? "bg-green-500/40" : "bg-border"
+              }`}
+            />
           )}
         </div>
       ))}
@@ -583,11 +616,14 @@ function StatCard({
 }) {
   const styles = {
     neutral: "bg-card border-border text-foreground hover:shadow-md",
-    success: "bg-green-50 dark:bg-green-950/20 border-green-400/40 text-green-700 dark:text-green-400 hover:shadow-md hover:shadow-green-200/50 dark:hover:shadow-green-950/50",
+    success:
+      "bg-green-50 dark:bg-green-950/20 border-green-400/40 text-green-700 dark:text-green-400 hover:shadow-md hover:shadow-green-200/50 dark:hover:shadow-green-950/50",
     warn: "bg-yellow-50 dark:bg-yellow-950/20 border-yellow-400/40 text-yellow-700 dark:text-yellow-400 hover:shadow-md hover:shadow-yellow-200/50 dark:hover:shadow-yellow-950/50",
   };
   return (
-    <div className={`rounded-lg border p-4 transition-all duration-200 ${styles[color]}`}>
+    <div
+      className={`rounded-lg border p-4 transition-all duration-200 ${styles[color]}`}
+    >
       <p className="text-2xl md:text-3xl font-bold">{value}</p>
       <p className="text-xs text-muted-foreground mt-0.5">{label}</p>
     </div>
@@ -596,7 +632,10 @@ function StatCard({
 
 function ErrorBox({ error }: { error: unknown }) {
   return (
-    <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive animate-in slide-in-from-top" role="alert">
+    <div
+      className="rounded-lg border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive animate-in slide-in-from-top"
+      role="alert"
+    >
       <p className="font-semibold flex items-center gap-2">
         <span className="text-lg">⚠</span>
         Error
