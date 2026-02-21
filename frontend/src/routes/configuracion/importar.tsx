@@ -14,9 +14,11 @@ export const Route = createFileRoute("/configuracion/importar")({
 });
 
 type Step = "upload" | "mapping" | "result";
+type TooltipState = { show: string; x: number; y: number } | null;
 
 function ImportarExcelPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [tooltip, setTooltip] = useState<TooltipState>(null);
 
   // ── Step state ────────────────────────────────────────────────────────
   const [step, setStep] = useState<Step>("upload");
@@ -99,6 +101,25 @@ function ImportarExcelPage() {
       (n) => manualMappings[n] === undefined,
     ) ?? [];
 
+  // Validación en tiempo real
+  const [yearError, setYearError] = useState<string>("");
+
+  const handleYearChange = (value: number) => {
+    if (value < 2020) setYearError("El año debe ser ≥ 2020");
+    else if (value > 2040) setYearError("El año debe ser ≤ 2040");
+    else setYearError("");
+    setAño(value);
+  };
+
+  const showTooltip = (
+    e: React.MouseEvent<HTMLButtonElement>,
+    message: string
+  ) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    setTooltip({ show: message, x: rect.left, y: rect.top - 40 });
+    setTimeout(() => setTooltip(null), 3000);
+  };
+
   const handleImportar = () => {
     if (!selectedFile) return;
     importarMutation.mutate({ file: selectedFile, año, mappings: manualMappings });
@@ -117,9 +138,23 @@ function ImportarExcelPage() {
 
   // ── Render ────────────────────────────────────────────────────────────
   return (
-    <div className="p-6 space-y-6 max-w-3xl">
+    <div className="p-4 md:p-6 space-y-6 max-w-3xl mx-auto">
+      {/* Tooltip flotante */}
+      {tooltip && (
+        <div
+          className="fixed bg-foreground text-background text-xs px-2 py-1 rounded pointer-events-none z-50 animate-in fade-in duration-200"
+          style={{
+            left: `${tooltip.x}px`,
+            top: `${tooltip.y}px`,
+            transform: "translateX(-50%)",
+          }}
+        >
+          ℹ {tooltip.show}
+        </div>
+      )}
+
       {/* Breadcrumb */}
-      <div className="flex items-center gap-3 text-sm text-muted-foreground">
+      <div className="flex items-center gap-3 text-xs md:text-sm text-muted-foreground">
         <Link
           to="/configuracion"
           className="hover:text-foreground transition-colors"
@@ -131,44 +166,47 @@ function ImportarExcelPage() {
       </div>
 
       <div>
-        <h1 className="text-3xl font-bold">Importar Vacaciones</h1>
-        <p className="text-muted-foreground mt-1">
+        <h1 className="text-2xl md:text-3xl font-bold">Importar Vacaciones</h1>
+        <p className="text-muted-foreground mt-1 text-sm">
           Carga masiva desde ficheros Excel — España FY o Chile CAR.
         </p>
       </div>
 
       {/* Indicador de paso */}
-      <StepIndicator current={step} />
+      <div className="animate-in fade-in duration-300">
+        <StepIndicator current={step} />
+      </div>
 
       {/* ── PASO 1: subir fichero ── */}
       {step === "upload" && (
-        <form onSubmit={handleAnalizar} className="space-y-5">
+        <form onSubmit={handleAnalizar} className="space-y-5 animate-in fade-in duration-300">
           {/* Instrucciones */}
-          <div className="bg-muted/40 border rounded-lg p-4 space-y-2 text-sm">
+          <div className="bg-muted/40 border rounded-lg p-4 space-y-2 text-sm" role="region" aria-label="Instrucciones de formato">
             <p className="font-semibold">Formatos admitidos:</p>
             <ul className="list-disc list-inside space-y-1 text-muted-foreground">
               <li>
                 <span className="font-medium text-foreground">España</span> —{" "}
-                <code className="bg-muted px-1 rounded">
+                <code className="bg-muted px-1 rounded text-xs">
                   Vacaciones_Syntphony_Connected_Health_FYxx.xlsx
                 </code>
               </li>
               <li>
                 <span className="font-medium text-foreground">Chile</span> —{" "}
-                <code className="bg-muted px-1 rounded">
+                <code className="bg-muted px-1 rounded text-xs">
                   seguimiento_ehCOS_CAR.xlsx
                 </code>
               </li>
             </ul>
-            <p className="text-muted-foreground pt-1">
-              Códigos importados:{" "}
-              <code className="bg-muted px-1 rounded">V</code> Vacaciones ·{" "}
-              <code className="bg-muted px-1 rounded">LD</code> Libre
-              Disposición ·{" "}
-              <code className="bg-muted px-1 rounded">AP</code> Asuntos Propios
-              · <code className="bg-muted px-1 rounded">LC</code> Licencia ·{" "}
-              <code className="bg-muted px-1 rounded">B</code> Baja
-            </p>
+            <div className="text-muted-foreground pt-2 space-y-1">
+              <p className="text-xs">Códigos automáticos:</p>
+              <div className="flex flex-wrap gap-2 text-xs">
+                <CodeBadge code="V" label="Vacaciones" />
+                <CodeBadge code="LD" label="Libre Disposición" />
+                <CodeBadge code="AP" label="Asuntos Propios" />
+                <CodeBadge code="LC" label="Permiso/Licencia" />
+                <CodeBadge code="B" label="Baja Médica" />
+              </div>
+            </div>
           </div>
 
           {/* Selector de fichero */}
@@ -177,6 +215,12 @@ function ImportarExcelPage() {
             <div
               className="flex items-center gap-3 border-2 border-dashed border-border rounded-lg px-4 py-5 cursor-pointer hover:border-primary/60 hover:bg-accent/30 transition-colors"
               onClick={() => fileInputRef.current?.click()}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") fileInputRef.current?.click();
+              }}
+              aria-label="Seleccionar fichero Excel"
             >
               <input
                 ref={fileInputRef}
@@ -184,8 +228,9 @@ function ImportarExcelPage() {
                 accept=".xlsx,.xls"
                 className="hidden"
                 onChange={handleFileChange}
+                aria-label="Carga de fichero Excel para importación masiva"
               />
-              <div className="text-2xl">📊</div>
+              <div className="text-2xl grid-center">📊</div>
               <div className="flex-1 min-w-0">
                 {selectedFile ? (
                   <>
@@ -213,6 +258,7 @@ function ImportarExcelPage() {
                     e.stopPropagation();
                     handleReset();
                   }}
+                  aria-label="Eliminar fichero seleccionado"
                 >
                   ✕
                 </button>
@@ -222,27 +268,60 @@ function ImportarExcelPage() {
 
           {/* Año fiscal */}
           <div className="space-y-1.5">
-            <label className="block text-sm font-medium">Año fiscal</label>
+            <label className="block text-sm font-medium flex items-center gap-2">
+              Año fiscal
+              <button
+                type="button"
+                className="text-muted-foreground hover:text-foreground text-xs cursor-help transition-colors"
+                onClick={(e) =>
+                  showTooltip(e, "Formato fiscal: 2026 es FY2026 (ene-dic 2026)")
+                }
+              >
+                ℹ
+              </button>
+            </label>
             <input
               type="number"
               min={2020}
               max={2040}
               value={año}
-              onChange={(e) => setAño(Number(e.target.value))}
-              className="w-36 px-3 py-2 border rounded-md text-sm bg-background"
+              onChange={(e) => handleYearChange(Number(e.target.value))}
+              className={`w-full sm:w-36 px-3 py-2 border rounded-md text-sm bg-background transition-colors ${
+                yearError ? "border-destructive focus:ring-destructive/20" : "border-border"
+              }`}
+              aria-label="Año fiscal de referencia"
+              aria-describedby={yearError ? "year-error" : undefined}
             />
-            <p className="text-xs text-muted-foreground">
-              Año de referencia (ej. 2026 para FY2026)
-            </p>
+            {yearError ? (
+              <p className="text-xs text-destructive" id="year-error">
+                ✗ {yearError}
+              </p>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                Año de referencia (ej. 2026 para FY2026)
+              </p>
+            )}
           </div>
 
           <button
             type="submit"
-            disabled={!selectedFile || analizarMutation.isPending}
-            className="px-5 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            disabled={!selectedFile || analizarMutation.isPending || !!yearError}
+            className="px-5 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
           >
+            {analizarMutation.isPending && <span className="inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />}
             {analizarMutation.isPending ? "Analizando…" : "Analizar Excel →"}
           </button>
+
+          {analizarMutation.isPending && (
+            <div className="space-y-3 animate-in fade-in">
+              <div className="text-xs text-muted-foreground">Cargando análisis...</div>
+              <div className="space-y-2">
+                <div className="h-4 bg-muted rounded animate-pulse" />
+                <div className="h-4 bg-muted rounded animate-pulse w-5/6" />
+                <div className="h-4 bg-muted rounded animate-pulse w-4/6" />
+              </div>
+            </div>
+          )}
 
           {analizarMutation.isError && (
             <ErrorBox error={analizarMutation.error} />
@@ -252,7 +331,7 @@ function ImportarExcelPage() {
 
       {/* ── PASO 2: revisión y mapeo ── */}
       {step === "mapping" && analysis && (
-        <div className="space-y-6">
+        <div className="space-y-6 animate-in fade-in duration-300">
           {/* Resumen del análisis */}
           <div className="grid grid-cols-3 gap-3">
             <StatCard
@@ -371,9 +450,9 @@ function ImportarExcelPage() {
 
       {/* ── PASO 3: resultado ── */}
       {step === "result" && result && (
-        <div className="space-y-4">
+        <div className="space-y-4 animate-in fade-in duration-300">
           {/* Resumen */}
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <StatCard
               label="Personas procesadas"
               value={result.personasProcesadas}
@@ -392,9 +471,10 @@ function ImportarExcelPage() {
           </div>
 
           {result.personasNoEncontradas.length > 0 && (
-            <div className="rounded-lg border border-yellow-400/40 bg-yellow-50 dark:bg-yellow-950/20 p-4">
-              <p className="text-sm font-semibold text-yellow-700 dark:text-yellow-400 mb-2">
-                ⚠ {result.personasNoEncontradas.length} persona(s) omitidas
+            <div className="rounded-lg border border-yellow-400/40 bg-yellow-50 dark:bg-yellow-950/20 p-4 animate-in slide-in-from-bottom">
+              <p className="text-sm font-semibold text-yellow-700 dark:text-yellow-400 mb-2 flex items-center gap-2">
+                <span className="text-lg">⚠</span>
+                {result.personasNoEncontradas.length} persona(s) omitidas
               </p>
               <ul className="text-xs space-y-0.5 text-yellow-600 dark:text-yellow-300">
                 {result.personasNoEncontradas.map((n) => (
@@ -407,9 +487,10 @@ function ImportarExcelPage() {
           )}
 
           {result.errores.length > 0 && (
-            <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-4">
-              <p className="text-sm font-semibold text-destructive mb-2">
-                ✕ {result.errores.length} error(es)
+            <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-4 animate-in slide-in-from-bottom">
+              <p className="text-sm font-semibold text-destructive mb-2 flex items-center gap-2">
+                <span className="text-lg">✕</span>
+                {result.errores.length} error(es)
               </p>
               <ul className="text-xs space-y-1 text-destructive/80">
                 {result.errores.map((e, i) => (
@@ -423,17 +504,31 @@ function ImportarExcelPage() {
 
           {result.personasNoEncontradas.length === 0 &&
             result.errores.length === 0 && (
-              <div className="rounded-lg border border-green-400/40 bg-green-50 dark:bg-green-950/20 p-3 text-sm text-green-700 dark:text-green-400 font-medium">
-                ✓ Importación completada sin errores
+              <div className="rounded-lg border border-green-400/40 bg-green-50 dark:bg-green-950/20 p-4 text-sm text-green-700 dark:text-green-400 font-medium animate-in slide-in-from-bottom">
+                <div className="flex items-center gap-2">
+                  <span className="w-6 h-6 rounded-full bg-green-500 text-white flex items-center justify-center animate-in zoom-in">
+                    ✓
+                  </span>
+                  Importación completada sin errores
+                </div>
               </div>
             )}
 
-          <button
-            onClick={handleReset}
-            className="px-4 py-2 border rounded-md text-sm hover:bg-accent transition-colors"
-          >
-            Nueva importación
-          </button>
+          <div className="flex gap-3 pt-2 flex-wrap">
+            <button
+              onClick={handleReset}
+              className="px-4 py-2 border rounded-md text-sm hover:bg-accent transition-colors"
+              aria-label="Realizar nueva importación"
+            >
+              Nueva importación
+            </button>
+            <Link
+              to="/calendario"
+              className="px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm hover:bg-primary/90 transition-colors"
+            >
+              Ver Calendario
+            </Link>
+          </div>
         </div>
       )}
     </div>
@@ -451,24 +546,29 @@ function StepIndicator({ current }: { current: Step }) {
     { id: "result", label: "3. Resultado" },
   ];
   return (
-    <div className="flex items-center gap-0">
+    <nav className="flex items-center gap-0 flex-wrap" aria-label="Pasos del proceso de importación">
       {steps.map((s, i) => (
         <div key={s.id} className="flex items-center">
           <div
-            className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+            className={`px-3 py-1 rounded-full text-xs font-medium transition-all duration-200 ${
               current === s.id
-                ? "bg-primary text-primary-foreground"
-                : "bg-muted text-muted-foreground"
+                ? "bg-primary text-primary-foreground shadow-md scale-105"
+                : current > s.id
+                  ? "bg-green-500/20 text-green-700 dark:text-green-400"
+                  : "bg-muted text-muted-foreground"
             }`}
+            aria-current={current === s.id ? "step" : undefined}
           >
-            {s.label}
+            {current > s.id ? "✓" : s.label}
           </div>
           {i < steps.length - 1 && (
-            <div className="w-6 h-px bg-border mx-1" />
+            <div className={`w-6 h-px mx-1 transition-colors ${
+              current > s.id ? "bg-green-500/40" : "bg-border"
+            }`} />
           )}
         </div>
       ))}
-    </div>
+    </nav>
   );
 }
 
@@ -482,13 +582,13 @@ function StatCard({
   color: "neutral" | "success" | "warn";
 }) {
   const styles = {
-    neutral: "bg-card border-border text-foreground",
-    success: "bg-green-50 dark:bg-green-950/20 border-green-400/40 text-green-700 dark:text-green-400",
-    warn: "bg-yellow-50 dark:bg-yellow-950/20 border-yellow-400/40 text-yellow-700 dark:text-yellow-400",
+    neutral: "bg-card border-border text-foreground hover:shadow-md",
+    success: "bg-green-50 dark:bg-green-950/20 border-green-400/40 text-green-700 dark:text-green-400 hover:shadow-md hover:shadow-green-200/50 dark:hover:shadow-green-950/50",
+    warn: "bg-yellow-50 dark:bg-yellow-950/20 border-yellow-400/40 text-yellow-700 dark:text-yellow-400 hover:shadow-md hover:shadow-yellow-200/50 dark:hover:shadow-yellow-950/50",
   };
   return (
-    <div className={`rounded-lg border p-4 ${styles[color]}`}>
-      <p className="text-2xl font-bold">{value}</p>
+    <div className={`rounded-lg border p-4 transition-all duration-200 ${styles[color]}`}>
+      <p className="text-2xl md:text-3xl font-bold">{value}</p>
       <p className="text-xs text-muted-foreground mt-0.5">{label}</p>
     </div>
   );
@@ -496,11 +596,35 @@ function StatCard({
 
 function ErrorBox({ error }: { error: unknown }) {
   return (
-    <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive">
-      <p className="font-semibold">Error</p>
+    <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive animate-in slide-in-from-top" role="alert">
+      <p className="font-semibold flex items-center gap-2">
+        <span className="text-lg">⚠</span>
+        Error
+      </p>
       <p className="mt-1">
         {error instanceof Error ? error.message : "Error desconocido"}
       </p>
+    </div>
+  );
+}
+
+function CodeBadge({ code, label }: { code: string; label: string }) {
+  const [showLabel, setShowLabel] = useState(false);
+  return (
+    <div
+      className="relative"
+      onMouseEnter={() => setShowLabel(true)}
+      onMouseLeave={() => setShowLabel(false)}
+    >
+      <code className="bg-muted px-2 py-1 rounded text-xs font-mono hover:bg-muted/80 transition-colors cursor-help border border-muted-foreground/20">
+        {code}
+      </code>
+      {showLabel && (
+        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 rounded bg-foreground text-background text-xs whitespace-nowrap z-10 animate-in fade-in zoom-in-95 duration-100">
+          {label}
+          <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-foreground" />
+        </div>
+      )}
     </div>
   );
 }
