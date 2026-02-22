@@ -33,6 +33,27 @@ interface Release {
 
 const CHANGELOG: Release[] = [
   {
+    version: "1.2.1",
+    fecha: "22/02/2026",
+    etiqueta: "Hotfix — Exportacion y Dashboard",
+    cambios: [
+      {
+        id: "FIX-001",
+        tipo: "bug",
+        titulo: "Home — Sprint planificado eliminado del dashboard",
+        descripcion:
+          "El dashboard de inicio mostraba tanto el sprint ACTIVO como el PLANIFICACION. Corregido para mostrar unicamente el sprint activo del squad seleccionado.",
+      },
+      {
+        id: "FEATURE-006",
+        tipo: "feature",
+        titulo: "Timeline — Boton de exportacion a Excel",
+        descripcion:
+          "Nuevo boton 'Descargar' en la cabecera de la pagina Timeline que exporta la planificacion del sprint en formato XLSX. Incluye nombre de fichero dinamico con nombre del sprint y fecha actual.",
+      },
+    ],
+  },
+  {
     version: "1.2.0",
     fecha: "22/02/2026",
     etiqueta: "Liberacion Planificacion",

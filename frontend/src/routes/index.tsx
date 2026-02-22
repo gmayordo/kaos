@@ -68,20 +68,6 @@ function IndexPage() {
 
   const sprintActivo = sprintActivoData?.content?.[0] ?? null;
 
-  const { data: sprintsSquadData } = useQuery({
-    queryKey: ["sprints-squad", selectedSquadId],
-    queryFn: () =>
-      sprintService.listar(0, 50, {
-        squadId: Number(selectedSquadId),
-      }),
-    enabled: selectedSquadId !== "",
-  });
-
-  const sprintsSquad = sprintsSquadData?.content ?? [];
-  const sprintReciente = sprintsSquad
-    .slice()
-    .sort((a, b) => b.fechaInicio.localeCompare(a.fechaInicio))[0];
-
   const { data: dashboardActivo, isLoading: isLoadingDashboardActivo } =
     useQuery({
       queryKey: ["dashboard-sprint-activo", sprintActivo?.id],
@@ -197,7 +183,8 @@ function IndexPage() {
       <div>
         <h1 className="text-3xl font-bold">Bienvenido a KAOS</h1>
         <p className="text-muted-foreground mt-2">
-          Plataforma de Gestión de Equipos de Desarrollo
+          Plataforma de Gestion de Equipos de Desarrollo con planificacion de
+          sprints, tareas y capacidad
         </p>
       </div>
 
@@ -236,16 +223,6 @@ function IndexPage() {
             isLoading={isLoadingSprintActivo}
           />
         </div>
-
-        {!sprintActivo && sprintReciente && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <SprintCard
-              sprint={sprintReciente}
-              titulo="Sprint mas reciente"
-              isLoading={false}
-            />
-          </div>
-        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-8">
