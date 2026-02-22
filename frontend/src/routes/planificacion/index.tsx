@@ -18,7 +18,7 @@ import type {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { CalendarRange, Kanban, LayoutDashboard, Plus, X } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 /** Modal inline para crear un sprint */
 function ModalNuevoSprint({
@@ -202,6 +202,16 @@ function PlanificacionPage() {
       }),
   });
   const sprints = sprintsData?.content ?? [];
+
+  // Sincronizar selectedSprint cuando la lista se refresca (ej. tras cambio de estado)
+  useEffect(() => {
+    if (selectedSprint) {
+      const updated = sprints.find((s) => s.id === selectedSprint.id);
+      if (updated && updated.estado !== selectedSprint.estado) {
+        setSelectedSprint(updated);
+      }
+    }
+  }, [sprints]);
 
   // ── Personas (para ModalTarea) ───────────────────────────────────────────────
   const { data: personasData } = useQuery({
