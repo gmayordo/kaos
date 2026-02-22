@@ -9,10 +9,12 @@ import { sprintService } from "@/services/sprintService";
 import { tareaService } from "@/services/tareaService";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { clsx } from "clsx";
 import {
   ArrowLeft,
   CalendarRange,
   Clock,
+  FileText,
   Kanban,
   RefreshCw,
   Target,
@@ -91,6 +93,20 @@ function DashboardPage() {
             <Kanban className="h-4 w-4" />
             Kanban
           </Link>
+          {sprint?.estado === "CERRADO" && (
+            <Link
+              to="/planificacion/resumen/$sprintId"
+              params={{ sprintId }}
+              className={clsx(
+                "flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-md border transition-colors",
+                "border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100",
+                "dark:border-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-300 dark:hover:bg-emerald-900/40",
+              )}
+            >
+              <FileText className="h-4 w-4" />
+              Resumen
+            </Link>
+          )}
         </div>
       </div>
 

@@ -1,6 +1,6 @@
 # KAOS — Plataforma de Gestión de Equipos
 
-**Versión**: 1.1.0 (21/02/2026)  
+**Versión**: 1.2.1 (22/02/2026)  
 **Status**: ✅ Production Ready
 
 Aplicación full-stack para gestión de capacidad de squads de desarrollo.

@@ -13,7 +13,7 @@
 
     <groupId>com.kaos</groupId>
     <artifactId>kaos-backend</artifactId>
-    <version>1.1.0</version>
+    <version>1.2.1</version>
     <name>KAOS Backend</name>
     <description>Plataforma de Gestión de Equipos de Desarrollo</description>
 

@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import com.kaos.planificacion.exception.CapacidadInsuficienteException;
 import com.kaos.planificacion.exception.SolapamientoSprintException;
 import com.kaos.planificacion.exception.SprintNoEnPlanificacionException;
+import com.kaos.planificacion.exception.TareaNoEnPendienteException;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
@@ -96,6 +97,13 @@ public class GlobalExceptionHandler {
         log.warn("Operacion no permitida sobre sprint {}: estado actual {}", ex.getSprintId(), ex.getEstadoActual());
         return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
                 .body(ErrorResponse.of("SPRINT_ESTADO_INVALIDO", ex.getMessage()));
+    }
+
+    @ExceptionHandler(TareaNoEnPendienteException.class)
+    public ResponseEntity<ErrorResponse> handleTareaNoEnPendiente(TareaNoEnPendienteException ex) {
+        log.warn("Operacion no permitida sobre tarea {}: estado actual {}", ex.getTareaId(), ex.getEstadoActual());
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
+                .body(ErrorResponse.of("TAREA_ESTADO_INVALIDO", ex.getMessage()));
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)

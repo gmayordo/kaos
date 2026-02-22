@@ -232,13 +232,18 @@ public class SprintService {
                 sprintBase.getFechaInicio(),
                 sprintBase.getFechaFin());
 
+        // Validar transición usando el primer sprint no idempotente
         for (Sprint sprint : relacionados) {
             SprintEstado estadoActual = sprint.getEstado();
-            // Idempotente: ya está en el estado deseado, ignorar
             if (estadoActual == nuevoEstado) {
                 continue;
             }
-            // Todas las transiciones entre estados son permitidas
+            boolean transicionValida = (estadoActual == SprintEstado.PLANIFICACION && nuevoEstado == SprintEstado.ACTIVO)
+                    || (estadoActual == SprintEstado.ACTIVO && nuevoEstado == SprintEstado.CERRADO);
+            if (!transicionValida) {
+                throw new IllegalStateException(
+                        "Transición de estado inválida: " + estadoActual + " → " + nuevoEstado);
+            }
         }
 
         for (Sprint sprint : relacionados) {
