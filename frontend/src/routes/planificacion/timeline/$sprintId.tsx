@@ -12,7 +12,13 @@ import { tareaService } from "@/services/tareaService";
 import type { TareaRequest, TareaResponse } from "@/types/api";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, Download, Kanban, LayoutDashboard, RefreshCw } from "lucide-react";
+import {
+  ArrowLeft,
+  Download,
+  Kanban,
+  LayoutDashboard,
+  RefreshCw,
+} from "lucide-react";
 import { useState } from "react";
 
 export const Route = createFileRoute("/planificacion/timeline/$sprintId")({

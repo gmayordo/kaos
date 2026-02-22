@@ -235,14 +235,9 @@ function IndexPage() {
             titulo="Sprint activo"
             isLoading={isLoadingSprintActivo}
           />
-          <SprintCard
-            sprint={sprintPlanificado}
-            titulo="Sprint planificado"
-            isLoading={isLoadingSprintPlan}
-          />
         </div>
 
-        {!sprintActivo && !sprintPlanificado && sprintReciente && (
+        {!sprintActivo && sprintReciente && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <SprintCard
               sprint={sprintReciente}
