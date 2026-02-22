@@ -41,4 +41,21 @@ public interface AusenciaRepository extends JpaRepository<Ausencia, Long> {
             @Param("fechaInicio") LocalDate fechaInicio,
             @Param("fechaFin") LocalDate fechaFin
     );
+
+    /**
+     * Verifica si existe solapamiento de ausencias para una persona.
+     * Retorna true si hay alguna ausencia que se solape con el rango dado.
+     * Pasa null en ausenciaId para excluir ningún registro (usado en importación).
+     */
+    @Query("SELECT CASE WHEN COUNT(a) > 0 THEN TRUE ELSE FALSE END FROM Ausencia a " +
+           "WHERE a.persona.id = :personaId " +
+           "AND (:ausenciaId IS NULL OR a.id != :ausenciaId) " +
+           "AND a.fechaInicio <= :fechaFin " +
+           "AND a.fechaFin >= :fechaInicio")
+    boolean existsSolapamiento(
+            @Param("personaId") Long personaId,
+            @Param("ausenciaId") Long ausenciaId,
+            @Param("fechaInicio") LocalDate fechaInicio,
+            @Param("fechaFin") LocalDate fechaFin
+    );
 }
