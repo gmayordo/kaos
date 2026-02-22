@@ -234,6 +234,11 @@ public class SprintService {
 
         for (Sprint sprint : relacionados) {
             SprintEstado estadoActual = sprint.getEstado();
+            // Idempotente: ya está en el estado deseado, ignorar
+            if (estadoActual == nuevoEstado) {
+                continue;
+            }
+            // Transiciones válidas
             if (estadoActual == SprintEstado.PLANIFICACION && nuevoEstado == SprintEstado.ACTIVO) {
                 continue;
             }
@@ -246,7 +251,9 @@ public class SprintService {
         }
 
         for (Sprint sprint : relacionados) {
-            sprint.setEstado(nuevoEstado);
+            if (sprint.getEstado() != nuevoEstado) {
+                sprint.setEstado(nuevoEstado);
+            }
         }
 
         var saved = sprintRepository.saveAll(relacionados);
