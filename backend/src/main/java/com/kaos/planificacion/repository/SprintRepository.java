@@ -2,6 +2,7 @@ package com.kaos.planificacion.repository;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -47,6 +48,12 @@ public interface SprintRepository extends JpaRepository<Sprint, Long> {
      * Lista sprints activos para un squad.
      */
     List<Sprint> findBySquadIdAndEstado(Long squadId, SprintEstado estado);
+
+    /**
+     * Obtiene el primer sprint con el estado dado para un squad.
+     * Útil para resolver el sprint KAOS activo al importar issues de Jira.
+     */
+    Optional<Sprint> findFirstBySquadIdAndEstado(Long squadId, SprintEstado estado);
 
     /**
      * Lista sprints por nombre y rango exacto de fechas.
