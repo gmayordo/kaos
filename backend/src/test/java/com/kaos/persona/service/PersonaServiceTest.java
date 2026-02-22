@@ -1,15 +1,19 @@
 package com.kaos.persona.service;
 
-import com.kaos.horario.entity.PerfilHorario;
-import com.kaos.horario.repository.PerfilHorarioRepository;
-import com.kaos.persona.dto.PersonaRequest;
-import com.kaos.persona.dto.PersonaResponse;
-import com.kaos.persona.entity.Persona;
-import com.kaos.persona.entity.Rol;
-import com.kaos.persona.entity.Seniority;
-import com.kaos.persona.mapper.PersonaMapper;
-import com.kaos.persona.repository.PersonaRepository;
-import jakarta.persistence.EntityNotFoundException;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -22,16 +26,16 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
-
-import static org.assertj.core.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import com.kaos.horario.entity.PerfilHorario;
+import com.kaos.horario.repository.PerfilHorarioRepository;
+import com.kaos.persona.dto.PersonaRequest;
+import com.kaos.persona.dto.PersonaResponse;
+import com.kaos.persona.entity.Persona;
+import com.kaos.persona.entity.Rol;
+import com.kaos.persona.entity.Seniority;
+import com.kaos.persona.mapper.PersonaMapper;
+import com.kaos.persona.repository.PersonaRepository;
+import jakarta.persistence.EntityNotFoundException;
 
 /**
  * Tests unitarios para {@link PersonaService}.
@@ -79,12 +83,13 @@ class PersonaServiceTest {
         personaMock.setFechaIncorporacion(LocalDate.now());
         personaMock.setSendNotifications(true);
 
-        // PersonaRequest mock - 9 campos
+        // PersonaRequest mock - 10 campos
         requestMock = new PersonaRequest(
                 "Juan Pérez",
                 "juan@example.com",
                 "JIRA-001",
                 1L,  // perfilHorarioId
+                "Zaragoza",  // ciudad
                 Seniority.MID,
                 "Java, Spring Boot",
                 new BigDecimal("50.00"),
@@ -92,7 +97,7 @@ class PersonaServiceTest {
                 true  // sendNotifications
         );
 
-        // PersonaResponse mock - 14 campos
+        // PersonaResponse mock - 15 campos
         responseMock = new PersonaResponse(
                 1L,
                 "Juan Pérez",
@@ -100,6 +105,7 @@ class PersonaServiceTest {
                 "JIRA-001",
                 1L,  // perfilHorarioId
                 "Zona Europa",  // perfilHorarioNombre
+                "Zaragoza",  // ciudad
                 Seniority.MID,
                 "Java, Spring Boot",
                 new BigDecimal("50.00"),
@@ -370,6 +376,7 @@ class PersonaServiceTest {
                     "test@example.com",
                     "JIRA-002",
                     1L,
+                    "Valencia",  // ciudad
                     Seniority.JUNIOR,
                     "Java",
                     new BigDecimal("30.00"),
@@ -418,6 +425,7 @@ class PersonaServiceTest {
                     "test@example.com",
                     null,  // idJira null
                     1L,
+                    "Temuco",  // ciudad
                     Seniority.JUNIOR,
                     "Python",
                     new BigDecimal("40.00"),
@@ -448,6 +456,7 @@ class PersonaServiceTest {
                     "test@example.com",
                     "   ",  // idJira blank
                     1L,
+                    "Zaragoza",  // ciudad
                     Seniority.JUNIOR,
                     "Go",
                     new BigDecimal("45.00"),

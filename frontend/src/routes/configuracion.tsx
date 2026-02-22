@@ -1,7 +1,12 @@
 import { perfilHorarioService } from "@/services/perfilHorarioService";
 import type { PerfilHorarioRequest, PerfilHorarioResponse } from "@/types/api";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  Link,
+  Outlet,
+  useRouterState,
+} from "@tanstack/react-router";
 import { useState } from "react";
 
 export const Route = createFileRoute("/configuracion")({
@@ -9,6 +14,7 @@ export const Route = createFileRoute("/configuracion")({
 });
 
 function ConfiguracionPage() {
+  const { location } = useRouterState();
   const queryClient = useQueryClient();
   const [editingPerfil, setEditingPerfil] =
     useState<PerfilHorarioResponse | null>(null);
@@ -51,6 +57,11 @@ function ConfiguracionPage() {
       queryClient.invalidateQueries({ queryKey: ["perfiles-horario"] });
     },
   });
+
+  // Si la ruta activa es una sub-ruta de configuración, ceder el render
+  if (location.pathname.startsWith("/configuracion/")) {
+    return <Outlet />;
+  }
 
   const handleSubmit = (data: PerfilHorarioRequest) => {
     if (editingPerfil) {
@@ -99,6 +110,43 @@ function ConfiguracionPage() {
 
   return (
     <div className="p-6 space-y-6">
+      {/* Sección nav: sub-páginas de Configuración */}
+      <div className="grid grid-cols-3 gap-3">
+        <div className="rounded-lg border-2 border-primary bg-primary/5 px-4 py-3">
+          <p className="text-xs font-semibold text-primary uppercase tracking-wide">
+            Activo
+          </p>
+          <p className="font-semibold mt-0.5">Perfiles Horario</p>
+          <p className="text-xs text-muted-foreground mt-1">
+            Jornadas laborales por zona horaria
+          </p>
+        </div>
+        <Link
+          to="/configuracion/festivos"
+          className="rounded-lg border border-border bg-card px-4 py-3 hover:bg-accent hover:border-primary/40 transition-colors"
+        >
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+            Ir a
+          </p>
+          <p className="font-semibold mt-0.5">Festivos</p>
+          <p className="text-xs text-muted-foreground mt-1">
+            Gestionar festivos · Importar CSV
+          </p>
+        </Link>
+        <Link
+          to="/configuracion/importar"
+          className="rounded-lg border border-border bg-card px-4 py-3 hover:bg-accent hover:border-primary/40 transition-colors"
+        >
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+            Ir a
+          </p>
+          <p className="font-semibold mt-0.5">Importar Vacaciones</p>
+          <p className="text-xs text-muted-foreground mt-1">
+            Carga masiva desde Excel
+          </p>
+        </Link>
+      </div>
+
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Configuración</h1>

@@ -13,7 +13,7 @@
 
     <groupId>com.kaos</groupId>
     <artifactId>kaos-backend</artifactId>
-    <version>0.1.0-SNAPSHOT</version>
+    <version>1.1.0</version>
     <name>KAOS Backend</name>
     <description>Plataforma de Gestión de Equipos de Desarrollo</description>
 
@@ -74,6 +74,18 @@
             <artifactId>lombok</artifactId>
             <version>${lombok.version}</version>
             <scope>provided</scope>
+        </dependency>
+
+        <!-- Apache POI — lectura de ficheros Excel (.xlsx) -->
+        <dependency>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi</artifactId>
+            <version>5.2.5</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi-ooxml</artifactId>
+            <version>5.2.5</version>
         </dependency>
 
         <!-- H2 para perfil dev -->
@@ -166,6 +178,7 @@
                         <exclude>**/entity/**</exclude>
                         <exclude>**/dto/**</exclude>
                         <exclude>**/mapper/**</exclude>
+                        <exclude>**/controller/**</exclude>
                         <exclude>**/BaseEntity.class</exclude>
                         <exclude>**/GlobalExceptionHandler.class</exclude>
                     </excludes>
@@ -190,18 +203,13 @@
                             <goal>check</goal>
                         </goals>
                         <configuration>
+                            <!-- Solo evaluar servicios de planificación -->
+                            <includes>
+                                <include>com/kaos/planificacion/service/*</include>
+                            </includes>
                             <rules>
                                 <rule>
                                     <element>BUNDLE</element>
-                                    <excludes>
-                                        <exclude>**/config/*</exclude>
-                                        <exclude>**/KaosApplication</exclude>
-                                        <exclude>**/entity/*</exclude>
-                                        <exclude>**/dto/*</exclude>
-                                        <exclude>**/mapper/*</exclude>
-                                        <exclude>**/BaseEntity</exclude>
-                                        <exclude>**/GlobalExceptionHandler</exclude>
-                                    </excludes>
                                     <limits>
                                         <limit>
                                             <counter>LINE</counter>

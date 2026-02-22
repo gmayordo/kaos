@@ -50,6 +50,10 @@ public class Persona extends BaseEntity {
     @JoinColumn(name = "perfil_horario_id", nullable = false)
     private PerfilHorario perfilHorario;
 
+    @Comment("Ciudad de la persona para calendario laboral")
+    @Column(name = "ciudad", nullable = false, length = 100)
+    private String ciudad;
+
     @Comment("Nivel de seniority: JUNIOR, MID, SENIOR, LEAD")
     @Enumerated(EnumType.STRING)
     @Column(name = "seniority", length = 20)

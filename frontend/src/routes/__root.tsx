@@ -1,5 +1,14 @@
 import { createRootRoute, Link, Outlet } from "@tanstack/react-router";
-import { Briefcase, Home, Settings, Users } from "lucide-react";
+import {
+  Briefcase,
+  Calendar,
+  CalendarDays,
+  Clock,
+  Home,
+  Info,
+  LayoutDashboard,
+  Users,
+} from "lucide-react";
 
 export const Route = createRootRoute({
   component: RootLayout,
@@ -11,7 +20,10 @@ function RootLayout() {
       {/* Sidebar */}
       <aside className="w-64 bg-card border-r border-border flex flex-col">
         <div className="p-6">
-          <div className="flex items-center gap-3">
+          <Link
+            to="/"
+            className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+          >
             <img src="/kaos-logo.svg" alt="KAOS" className="h-10 w-10" />
             <div>
               <h1 className="text-2xl font-bold text-primary">KAOS</h1>
@@ -19,7 +31,7 @@ function RootLayout() {
                 Gestión de Equipos
               </p>
             </div>
-          </div>
+          </Link>
         </div>
         <nav className="px-4 space-y-1">
           <NavLink to="/" icon={Home}>
@@ -31,14 +43,37 @@ function RootLayout() {
           <NavLink to="/personas" icon={Users}>
             Personas
           </NavLink>
-          <NavLink to="/configuracion" icon={Settings}>
-            Configuración
+          <NavLink to="/calendario" icon={Calendar}>
+            Calendario
+          </NavLink>
+          <NavLink to="/planificacion" icon={LayoutDashboard}>
+            Planificación
+          </NavLink>
+
+          {/* Sección Configuración */}
+          <div className="pt-2 pb-1 px-3">
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">
+              Configuración
+            </p>
+          </div>
+          <NavLink to="/configuracion" icon={Clock}>
+            Perfiles Horario
+          </NavLink>
+          <NavLink to="/configuracion/festivos" icon={CalendarDays}>
+            Festivos
+          </NavLink>
+
+          <NavLink to="/about" icon={Info}>
+            Acerca de
           </NavLink>
         </nav>
 
         {/* Footer con logo CONTROL */}
         <div className="mt-auto p-4 border-t border-border">
-          <div className="flex items-center gap-2 opacity-60 hover:opacity-100 transition-opacity">
+          <Link
+            to="/"
+            className="flex items-center gap-2 opacity-60 hover:opacity-100 transition-opacity"
+          >
             <img src="/control-logo.svg" alt="CONTROL" className="h-8 w-8" />
             <div>
               <p className="text-xs font-semibold text-muted-foreground">
@@ -46,7 +81,7 @@ function RootLayout() {
               </p>
               <p className="text-xs text-muted-foreground">CONTROL</p>
             </div>
-          </div>
+          </Link>
         </div>
       </aside>
 

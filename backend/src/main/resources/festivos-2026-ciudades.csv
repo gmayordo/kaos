@@ -1,0 +1,41 @@
+fecha;descripcion;tipo;ciudad
+2026-01-01;Año Nuevo;NACIONAL;Zaragoza
+2026-01-06;Reyes Magos;NACIONAL;Zaragoza
+2026-04-03;Viernes Santo;NACIONAL;Zaragoza
+2026-04-06;Lunes de Pascua;REGIONAL;Zaragoza
+2026-04-23;Día de Aragón;REGIONAL;Zaragoza
+2026-05-01;Día del Trabajo;NACIONAL;Zaragoza
+2026-10-12;Día de la Hispanidad;NACIONAL;Zaragoza
+2026-10-13;Fiestas del Pilar;LOCAL;Zaragoza
+2026-11-02;Todos los Santos;NACIONAL;Zaragoza
+2026-12-06;Día de la Constitución;NACIONAL;Zaragoza
+2026-12-08;Inmaculada Concepción;NACIONAL;Zaragoza
+2026-12-25;Navidad;NACIONAL;Zaragoza
+2026-01-01;Año Nuevo;NACIONAL;Valencia
+2026-01-06;Reyes Magos;NACIONAL;Valencia
+2026-03-19;San José - Día del Padre;NACIONAL;Valencia
+2026-04-03;Viernes Santo;NACIONAL;Valencia
+2026-04-06;Lunes de Pascua;REGIONAL;Valencia
+2026-05-01;Día del Trabajo;NACIONAL;Valencia
+2026-06-24;San Juan;LOCAL;Valencia
+2026-10-09;Día de la Comunidad Valenciana;REGIONAL;Valencia
+2026-10-12;Día de la Hispanidad;NACIONAL;Valencia
+2026-11-02;Todos los Santos;NACIONAL;Valencia
+2026-12-06;Día de la Constitución;NACIONAL;Valencia
+2026-12-08;Inmaculada Concepción;NACIONAL;Valencia
+2026-12-25;Navidad;NACIONAL;Valencia
+2026-01-01;Año Nuevo;NACIONAL;Temuco
+2026-04-03;Viernes Santo;NACIONAL;Temuco
+2026-04-04;Sábado Santo;NACIONAL;Temuco
+2026-05-01;Día del Trabajo;NACIONAL;Temuco
+2026-05-21;Día de las Glorias Navales;NACIONAL;Temuco
+2026-06-29;San Pedro y San Pablo;NACIONAL;Temuco
+2026-07-16;Día de la Virgen del Carmen;NACIONAL;Temuco
+2026-08-15;Asunción de la Virgen;NACIONAL;Temuco
+2026-09-18;Día de la Independencia;NACIONAL;Temuco
+2026-09-19;Día de las Glorias del Ejército;NACIONAL;Temuco
+2026-10-12;Día de la Raza;NACIONAL;Temuco
+2026-10-31;Día de las Iglesias Evangélicas;NACIONAL;Temuco
+2026-11-01;Día de Todos los Santos;NACIONAL;Temuco
+2026-12-08;Inmaculada Concepción;NACIONAL;Temuco
+2026-12-25;Navidad;NACIONAL;Temuco
