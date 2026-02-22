@@ -288,6 +288,13 @@ public class ExcelImportService {
                                 vacacionesCreadas++;
 
                             } else if (tipoAus != null) {
+                                boolean solapaAus = ausenciaRepository.existsSolapamiento(
+                                        persona.getId(), null, range.inicio(), range.fin());
+                                if (solapaAus) {
+                                    log.warn("Ausencia duplicada para {} [{} - {}] — se omite",
+                                            nombre, range.inicio(), range.fin());
+                                    continue;
+                                }
                                 Ausencia a = Ausencia.builder()
                                         .persona(persona)
                                         .fechaInicio(range.inicio())

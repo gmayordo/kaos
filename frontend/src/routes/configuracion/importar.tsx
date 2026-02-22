@@ -7,7 +7,7 @@ import type {
 } from "@/types/api";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export const Route = createFileRoute("/configuracion/importar")({
   component: ImportarExcelPage,
@@ -27,8 +27,24 @@ function ImportarExcelPage() {
   const [analysis, setAnalysis] = useState<ExcelAnalysisResponse | null>(null);
   /** nombre-excel → personaId (resolucion manual para no-resueltos) */
   const [manualMappings, setManualMappings] = useState<Record<string, number>>(
-    {},
+    () => {
+      try {
+        const stored = localStorage.getItem("kaos-excel-mappings");
+        return stored ? (JSON.parse(stored) as Record<string, number>) : {};
+      } catch {
+        return {};
+      }
+    },
   );
+
+  // Persist mappings to localStorage whenever they change
+  useEffect(() => {
+    try {
+      localStorage.setItem("kaos-excel-mappings", JSON.stringify(manualMappings));
+    } catch {
+      // localStorage not available (e.g. private mode with storage disabled)
+    }
+  }, [manualMappings]);
   const [result, setResult] = useState<ExcelImportResponse | null>(null);
 
   // ── Personas (para el selector) ───────────────────────────────────────
