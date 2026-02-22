@@ -1,22 +1,20 @@
 package com.kaos.persona.mapper;
 
-import com.kaos.horario.entity.PerfilHorario;
-import com.kaos.persona.dto.PersonaRequest;
-import com.kaos.persona.dto.PersonaResponse;
-import com.kaos.persona.entity.Persona;
-import com.kaos.persona.entity.Seniority;
+import static org.assertj.core.api.Assertions.assertThat;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.List;
-
-import static org.assertj.core.api.Assertions.assertThat;
+import com.kaos.horario.entity.PerfilHorario;
+import com.kaos.persona.dto.PersonaRequest;
+import com.kaos.persona.dto.PersonaResponse;
+import com.kaos.persona.entity.Persona;
+import com.kaos.persona.entity.Seniority;
 
 /**
  * Tests para PersonaMapper.
@@ -41,6 +39,7 @@ class PersonaMapperTest {
                     "juan.perez@example.com",
                     "jperez",
                     1L,
+                    "Zaragoza",
                     Seniority.SENIOR,
                     "Java, Spring Boot",
                     new BigDecimal("45.50"),
@@ -72,6 +71,7 @@ class PersonaMapperTest {
                     "ana.garcia@example.com",
                     null, // idJira opcional
                     2L,
+                    "Zaragoza",
                     Seniority.MID,
                     null, // skills opcional
                     new BigDecimal("40.00"),
@@ -245,6 +245,7 @@ class PersonaMapperTest {
                     "nuevo@example.com",
                     "nuevo",
                     5L,
+                    "Zaragoza",
                     Seniority.SENIOR,
                     "Java, Spring Boot, Docker",
                     new BigDecimal("50.00"),
@@ -291,6 +292,7 @@ class PersonaMapperTest {
                     "juan@example.com",
                     null, // idJira null → no debe sobrescribir
                     3L,
+                    "Zaragoza",
                     Seniority.SENIOR,
                     null, // skills null → no debe sobrescribir
                     new BigDecimal("47.00"),

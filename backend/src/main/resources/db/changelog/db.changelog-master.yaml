@@ -11,3 +11,26 @@ databaseChangeLog:
       file: db/changelog/005-create-squad-member.sql
   - include:
       file: db/changelog/006-seed-squads-personas.sql
+
+  # ── BLOQUE 2: Calendario ──────────────────────
+  - include:
+      file: db/changelog/007-create-festivo.sql
+  - include:
+      file: db/changelog/008-create-vacacion.sql
+  - include:
+      file: db/changelog/009-create-ausencia.sql
+  - include:
+      file: db/changelog/010-seed-festivos.sql
+  - include:
+      file: db/changelog/011-update-vacacion-constraint.sql
+  - include:
+      file: db/changelog/012-festivo-por-ciudad.sql
+  - include:
+      file: db/changelog/013-add-ciudad-to-persona.sql
+  # ── BLOQUE 3: Planificación ───────────────────
+  - include:
+      file: db/changelog/014-create-sprint.sql
+  - include:
+      file: db/changelog/015-create-tarea.sql
+  - include:
+      file: db/changelog/016-create-bloqueo.sql

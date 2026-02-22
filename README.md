@@ -1,5 +1,8 @@
 # KAOS — Plataforma de Gestión de Equipos
 
+**Versión**: 1.1.0 (21/02/2026)  
+**Status**: ✅ Production Ready
+
 Aplicación full-stack para gestión de capacidad de squads de desarrollo.
 
 | Capa       | Stack                                         |
@@ -82,12 +85,12 @@ Proxy automático: las peticiones a `/api/` se redirigen al backend en `:8080`.
 
 Los scripts de Liquibase cargan datos reales desde `equipos.yaml`:
 
-| Entidad       | Cantidad | Detalle                                                      |
-| ------------- | -------- | ------------------------------------------------------------ |
-| PerfilHorario | 2        | España (Europe/Madrid), Chile (America/Santiago)             |
-| Squad         | 3        | red (22517), green (22516), blue (22515)                     |
-| Persona       | 17       | Nombres, emails y Jira IDs reales                            |
-| SquadMember   | 19       | Luis Galván como SM en 3 squads (33%+33%+34%), resto al 100% |
+| Entidad       | Cantidad | Detalle                                                     |
+| ------------- | -------- | ----------------------------------------------------------- |
+| PerfilHorario | 2        | España (Europe/Madrid), Chile (America/Santiago)            |
+| Squad         | 3        | red (22517), green (22516), blue (22515)                    |
+| Persona       | 17       | Nombres, emails y Jira IDs reales                           |
+| SquadMember   | 19       | Juan Perez como SM en 3 squads (33%+33%+34%), resto al 100% |
 
 ## Endpoints principales
 
@@ -213,6 +216,64 @@ DELETE /api/v1/perfiles-horario/{id} → Eliminar perfil horario
 - ✅ Tests de integración con React Testing Library
 - ✅ Tests de componentes con diferentes props y estados
 - ✅ Cobertura de edge cases y validaciones
+
+---
+
+## ✨ Características Bloque 2 — v1.1.0
+
+### 📊 Gestión de Capacidad
+
+- **Calendario de vacaciones/ausencias** por persona y squad
+- **Filtrado dinámico**: Por squad → por persona
+- **Vistas**: Calendario visual + tabla detallada
+- **Tipos de ausencia**: VACACIONES, ASUNTOS_PROPIOS, BAJA_MEDICA, LIBRE_DISPOSICION, ASUNTOS_PROPIOS, PERMISO, OTRO
+
+### 📅 Gestión de Festivos
+
+- **Importación CSV**: Carga masiva de festivos por ciudad
+- **Filtrado**: Por tipo (NACIONAL, REGIONAL, LOCAL) y ciudad
+- **Validación**: Fechas únicas, sin duplicados
+
+### 📊 Importación Masiva de Vacaciones desde Excel
+
+**NEW in v1.1.0** 🎉
+
+Nuevo asistente en **Configuración → Importar Vacaciones** para cargar calendarios desde ficheros Excel.
+
+#### Características:
+
+- ✅ Soporta múltiples formatos: **España FY26**, **Chile CAR**
+- ✅ Wizard 3-pasos: Upload → Análisis → Mapeo → Importación
+- ✅ Detección automática de personas (exact + partial match)
+- ✅ Mapeo manual para nombres no encontrados
+- ✅ Agrupación automática de días consecutivos
+- ✅ Soporta 6 códigos de ausencia: V, LD, AP, LC, B, O
+
+#### Endpoints:
+
+```
+POST /api/v1/vacaciones/analizar-excel      # Dry-run analysis
+POST /api/v1/vacaciones/importar-excel      # Actual import with optional manual mappings
+```
+
+#### Testing:
+
+- ✅ 9 tests unitarios ExcelImportService
+- ✅ 6 tests integración endpoints
+- ✅ 20 tests UI component
+- ✅ 10 tests servicios frontend
+- **Total**: 45 casos de prueba (~85% coverage)
+
+#### Para usar:
+
+```
+1. Ve a Configuración → Importar Vacaciones
+2. Selecciona fichero Excel (.xlsx)
+3. Elige año fiscal
+4. Click "Analizar Excel →" — sistema detecta personas
+5. Asigna manualmente las no encontradas
+6. Click "Confirmar e Importar" — crea registros en BD
+```
 
 ### Comandos de Testing
 

@@ -363,6 +363,7 @@ function PersonaFormModal({
     nombre: persona?.nombre || "",
     email: persona?.email || "",
     idJira: persona?.idJira || "",
+    ciudad: persona?.ciudad || "",
     perfilHorarioId: persona?.perfilHorarioId || 1,
     seniority: persona?.seniority || "MID",
   });
@@ -407,6 +408,19 @@ function PersonaFormModal({
               onChange={(e) => handleChange("email", e.target.value)}
               className="w-full px-3 py-2 border rounded-md"
               required
+            />
+          </div>
+
+          {/* Ciudad */}
+          <div>
+            <label className="block text-sm font-medium mb-1">Ciudad *</label>
+            <input
+              type="text"
+              value={formData.ciudad}
+              onChange={(e) => handleChange("ciudad", e.target.value)}
+              className="w-full px-3 py-2 border rounded-md"
+              required
+              placeholder="Madrid, Zaragoza, Temuco..."
             />
           </div>
 

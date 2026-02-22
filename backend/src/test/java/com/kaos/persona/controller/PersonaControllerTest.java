@@ -1,6 +1,39 @@
 package com.kaos.persona.controller;
-
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kaos.persona.dto.PersonaRequest;
+import com.kaos.persona.dto.PersonaResponse;
+import com.kaos.persona.entity.Rol;
+import com.kaos.persona.entity.Seniority;
+import com.kaos.persona.service.PersonaService;import com.kaos.persona.dto.PersonaRequest;
 import com.kaos.persona.dto.PersonaResponse;
 import com.kaos.persona.entity.Rol;
 import com.kaos.persona.entity.Seniority;
@@ -56,6 +89,7 @@ class PersonaControllerTest {
                 "JIRA-001",
                 1L,
                 "Zona Europa",
+                "Zaragoza",
                 Seniority.MID,
                 "Java",
                 new BigDecimal("50.00"),
@@ -241,6 +275,7 @@ class PersonaControllerTest {
                     "juan@example.com",
                     "JIRA-001",
                     1L,
+                    "Zaragoza",
                     Seniority.MID,
                     "Java",
                     new BigDecimal("50.00"),
@@ -270,6 +305,7 @@ class PersonaControllerTest {
                     "invalid-email",  // email inválido
                     "JIRA-001",
                     1L,
+                    "Zaragoza",
                     Seniority.MID,
                     "Java",
                     new BigDecimal("50.00"),
@@ -295,6 +331,7 @@ class PersonaControllerTest {
                     "duplicado@example.com",
                     "JIRA-001",
                     1L,
+                    "Zaragoza",
                     Seniority.MID,
                     "Java",
                     new BigDecimal("50.00"),
@@ -326,6 +363,7 @@ class PersonaControllerTest {
                     "juan.updated@example.com",
                     "JIRA-001",
                     1L,
+                    "Zaragoza",
                     Seniority.SENIOR,
                     "Java, Spring Boot",
                     new BigDecimal("60.00"),
@@ -354,6 +392,7 @@ class PersonaControllerTest {
                     "test@example.com",
                     "JIRA-001",
                     1L,
+                    "Zaragoza",
                     Seniority.MID,
                     "Java",
                     new BigDecimal("50.00"),
@@ -381,6 +420,7 @@ class PersonaControllerTest {
                     "invalid",
                     "JIRA-001",
                     1L,
+                    "Zaragoza",
                     Seniority.MID,
                     "Java",
                     new BigDecimal("50.00"),

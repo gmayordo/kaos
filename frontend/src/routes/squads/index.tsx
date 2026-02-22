@@ -289,7 +289,10 @@ function SquadFormModal({
 }: SquadFormModalProps) {
   const [formData, setFormData] = useState<SquadRequest>({
     nombre: squad?.nombre || "",
+    descripcion: squad?.descripcion || "",
     estado: squad?.estado || "ACTIVO",
+    idSquadCorrJira: squad?.idSquadCorrJira || "",
+    idSquadEvolJira: squad?.idSquadEvolJira || "",
   });
 
   const handleChange = (field: keyof SquadRequest, value: string) => {
@@ -322,6 +325,52 @@ function SquadFormModal({
               required
               placeholder="Squad Red, Squad Blue, etc."
             />
+          </div>
+
+          {/* Descripción */}
+          <div>
+            <label className="block text-sm font-medium mb-1">
+              Descripción
+            </label>
+            <input
+              type="text"
+              value={formData.descripcion || ""}
+              onChange={(e) => handleChange("descripcion", e.target.value)}
+              className="w-full px-3 py-2 border rounded-md"
+              placeholder="Descripción del squad"
+            />
+          </div>
+
+          {/* IDs Jira */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                ID Squad Correctivos (Jira)
+              </label>
+              <input
+                type="text"
+                value={formData.idSquadCorrJira || ""}
+                onChange={(e) =>
+                  handleChange("idSquadCorrJira", e.target.value)
+                }
+                className="w-full px-3 py-2 border rounded-md"
+                placeholder="22517"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">
+                ID Squad Evolutivos (Jira)
+              </label>
+              <input
+                type="text"
+                value={formData.idSquadEvolJira || ""}
+                onChange={(e) =>
+                  handleChange("idSquadEvolJira", e.target.value)
+                }
+                className="w-full px-3 py-2 border rounded-md"
+                placeholder="97993"
+              />
+            </div>
           </div>
 
           {/* Estado */}

@@ -1,13 +1,12 @@
 package com.kaos.persona.dto;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import com.kaos.persona.entity.Seniority;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-
-import java.math.BigDecimal;
-import java.time.LocalDate;
 
 /**
  * Request para crear o actualizar una persona.
@@ -27,6 +26,10 @@ public record PersonaRequest(
 
         @NotNull(message = "El perfil de horario es obligatorio")
         Long perfilHorarioId,
+
+        @NotBlank(message = "La ciudad es obligatoria")
+        @Size(max = 100, message = "La ciudad no puede superar 100 caracteres")
+        String ciudad,
 
         Seniority seniority,
 
