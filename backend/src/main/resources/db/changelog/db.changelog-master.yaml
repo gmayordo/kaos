@@ -34,3 +34,10 @@ databaseChangeLog:
       file: db/changelog/015-create-tarea.sql
   - include:
       file: db/changelog/016-create-bloqueo.sql
+  # ── BLOQUE 4: Jira ───────────────────────────
+  - include:
+      file: db/changelog/017-create-jira-issue.sql
+  - include:
+      file: db/changelog/029-create-jira-issue-type-config.sql
+  - include:
+      file: db/changelog/030-alter-jira-issue-add-subtipo.sql
