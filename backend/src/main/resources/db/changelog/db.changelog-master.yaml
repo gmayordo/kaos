@@ -36,7 +36,10 @@ databaseChangeLog:
       file: db/changelog/016-create-bloqueo.sql
   # ── BLOQUE 4: Jira ───────────────────────────
   - include:
-      file: db/changelog/017-create-jira-issue.sql
+      file: db/changelog/017-create-jira-config.sql
+  - include:
+      file: db/changelog/018-create-jira-sync-status.sql
+      file: db/changelog/019-create-jira-issue.sql
   - include:
       file: db/changelog/029-create-jira-issue-type-config.sql
   - include:
