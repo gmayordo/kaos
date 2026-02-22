@@ -5,7 +5,7 @@
  */
 
 import type { SprintResponse } from "@/types/api";
-import { CheckCircle, ChevronDown, Play, Plus, Trash2 } from "lucide-react";
+import { CheckCircle, ChevronDown, Play, Plus, RotateCcw, Trash2 } from "lucide-react";
 import type { FC } from "react";
 import { useState } from "react";
 
@@ -22,6 +22,8 @@ interface Props {
   onActivarSprint: () => void;
   /** Callback para inactivar el sprint seleccionado */
   onCerrarSprint: () => void;
+  /** Callback para volver a planificación el sprint seleccionado */
+  onReplanificarSprint: () => void;
   /** Callback para eliminar el sprint seleccionado */
   onEliminarSprint: () => void;
   /** Estado de carga */
@@ -57,6 +59,7 @@ export const SprintSelector: FC<Props> = ({
   onCrearSprint,
   onActivarSprint,
   onCerrarSprint,
+  onReplanificarSprint,
   onEliminarSprint,
   isLoading = false,
 }) => {
@@ -67,8 +70,9 @@ export const SprintSelector: FC<Props> = ({
     setOpen(false);
   };
 
-  const puedeActivar = sprintSeleccionado?.estado === "PLANIFICACION";
+  const puedeActivar = sprintSeleccionado?.estado === "PLANIFICACION" || sprintSeleccionado?.estado === "CERRADO";
   const puedeCerrar = sprintSeleccionado?.estado === "ACTIVO";
+  const puedeReplanificar = sprintSeleccionado?.estado === "ACTIVO" || sprintSeleccionado?.estado === "CERRADO";
   const puedeEliminar = sprintSeleccionado?.estado === "PLANIFICACION";
 
   if (isLoading) {
@@ -168,7 +172,7 @@ export const SprintSelector: FC<Props> = ({
         Nuevo sprint
       </button>
 
-      {/* Acción: Activar sprint (solo si está en PLANIFICACION) */}
+      {/* Acción: Activar sprint (si está en PLANIFICACION o CERRADO) */}
       {puedeActivar && (
         <button
           type="button"
@@ -191,6 +195,19 @@ export const SprintSelector: FC<Props> = ({
         >
           <CheckCircle className="h-4 w-4" aria-hidden="true" />
           Inactivar sprint
+        </button>
+      )}
+
+      {/* Acción: Volver a planificación (si está ACTIVO o CERRADO) */}
+      {puedeReplanificar && (
+        <button
+          type="button"
+          onClick={onReplanificarSprint}
+          className="flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+          aria-label="Volver a estado planificacion"
+        >
+          <RotateCcw className="h-4 w-4" aria-hidden="true" />
+          Planificación
         </button>
       )}
 

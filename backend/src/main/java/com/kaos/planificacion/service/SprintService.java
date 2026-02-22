@@ -238,16 +238,7 @@ public class SprintService {
             if (estadoActual == nuevoEstado) {
                 continue;
             }
-            // Transiciones válidas
-            if (estadoActual == SprintEstado.PLANIFICACION && nuevoEstado == SprintEstado.ACTIVO) {
-                continue;
-            }
-            if (estadoActual == SprintEstado.ACTIVO && nuevoEstado == SprintEstado.CERRADO) {
-                continue;
-            }
-            throw new IllegalStateException(
-                    "Transición inválida de " + estadoActual + " a " + nuevoEstado +
-                            " para sprint " + sprint.getId());
+            // Todas las transiciones entre estados son permitidas
         }
 
         for (Sprint sprint : relacionados) {

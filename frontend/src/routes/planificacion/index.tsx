@@ -244,6 +244,13 @@ function PlanificacionPage() {
     },
   });
 
+  const replanificarSprint = useMutation({
+    mutationFn: (id: number) => sprintService.cambiarEstado(id, "PLANIFICACION"),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["sprints"] });
+    },
+  });
+
   const eliminarSprint = useMutation({
     mutationFn: (id: number) => sprintService.eliminar(id),
     onSuccess: () => {
@@ -543,6 +550,9 @@ function PlanificacionPage() {
           }}
           onCerrarSprint={() => {
             if (selectedSprint) cerrarSprint.mutate(selectedSprint.id);
+          }}
+          onReplanificarSprint={() => {
+            if (selectedSprint) replanificarSprint.mutate(selectedSprint.id);
           }}
           onEliminarSprint={() => {
             if (selectedSprint) {
