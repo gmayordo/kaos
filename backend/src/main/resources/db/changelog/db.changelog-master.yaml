@@ -27,3 +27,10 @@ databaseChangeLog:
       file: db/changelog/012-festivo-por-ciudad.sql
   - include:
       file: db/changelog/013-add-ciudad-to-persona.sql
+  # ── BLOQUE 3: Planificación ───────────────────
+  - include:
+      file: db/changelog/014-create-sprint.sql
+  - include:
+      file: db/changelog/015-create-tarea.sql
+  - include:
+      file: db/changelog/016-create-bloqueo.sql

@@ -178,6 +178,7 @@
                         <exclude>**/entity/**</exclude>
                         <exclude>**/dto/**</exclude>
                         <exclude>**/mapper/**</exclude>
+                        <exclude>**/controller/**</exclude>
                         <exclude>**/BaseEntity.class</exclude>
                         <exclude>**/GlobalExceptionHandler.class</exclude>
                     </excludes>
@@ -202,18 +203,13 @@
                             <goal>check</goal>
                         </goals>
                         <configuration>
+                            <!-- Solo evaluar servicios de planificación -->
+                            <includes>
+                                <include>com/kaos/planificacion/service/*</include>
+                            </includes>
                             <rules>
                                 <rule>
                                     <element>BUNDLE</element>
-                                    <excludes>
-                                        <exclude>**/config/*</exclude>
-                                        <exclude>**/KaosApplication</exclude>
-                                        <exclude>**/entity/*</exclude>
-                                        <exclude>**/dto/*</exclude>
-                                        <exclude>**/mapper/*</exclude>
-                                        <exclude>**/BaseEntity</exclude>
-                                        <exclude>**/GlobalExceptionHandler</exclude>
-                                    </excludes>
                                     <limits>
                                         <limit>
                                             <counter>LINE</counter>

@@ -28,6 +28,14 @@ tags:
     description: Gestión de ausencias por persona
   - name: Capacidad
     description: Cálculo de capacidad disponible por persona y squad
+  - name: Sprint
+    description: Gestión de sprints (ciclos de 2 semanas)
+  - name: Tarea
+    description: Gestión de tareas dentro de sprints
+  - name: Bloqueo
+    description: Gestión de bloqueos e impedimentos
+  - name: Planificacion
+    description: Vistas de planificación (Dashboard, Timeline)
 
 paths:
   # ═══════════════════════════════════════════════
@@ -1068,6 +1076,620 @@ paths:
         "500":
           $ref: "#/components/responses/InternalError"
 
+  # ═══════════════════════════════════════════════
+  # SPRINTS (BLOQUE 3)
+  # ═══════════════════════════════════════════════
+  /api/v1/sprints:
+    get:
+      operationId: listarSprints
+      summary: Lista sprints con filtros y paginación
+      tags: [Sprint]
+      parameters:
+        - name: squadId
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int64
+          description: Filtrar por squad
+        - name: estado
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [PLANIFICACION, ACTIVO, CERRADO]
+          description: Filtrar por estado
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/SizeParam"
+      responses:
+        "200":
+          description: Lista paginada de sprints
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  content:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/SprintResponse"
+                  totalElements:
+                    type: integer
+                  totalPages:
+                    type: integer
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    post:
+      operationId: crearSprint
+      summary: Crea un nuevo sprint
+      tags: [Sprint]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SprintRequest"
+      responses:
+        "201":
+          description: Sprint creado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SprintResponse"
+              example:
+                id: 101
+                nombre: "Sprint-Global-2026-02"
+                squadId: 1
+                squadNombre: "Red"
+                fechaInicio: "2026-02-23"
+                fechaFin: "2026-03-08"
+                objetivo: "Objetivo del sprint"
+                estado: "PLANIFICACION"
+                capacidadTotal: 320
+                tareasPendientes: 0
+                tareasEnProgreso: 0
+                tareasCompletadas: 0
+                createdAt: "2026-02-10T09:00:00Z"
+        "400":
+          description: Validación fallida (ej. solapamiento de sprints)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/sprints/{id}:
+    get:
+      operationId: obtenerSprint
+      summary: Obtiene un sprint por ID
+      tags: [Sprint]
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "200":
+          description: Sprint encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SprintResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    patch:
+      operationId: actualizarSprint
+      summary: Actualiza un sprint (solo en estado planificación)
+      tags: [Sprint]
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SprintRequest"
+      responses:
+        "200":
+          description: Sprint actualizado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SprintResponse"
+        "409":
+          description: Sprint no está en estado planificación
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    delete:
+      operationId: eliminarSprint
+      summary: Elimina un sprint (solo en estado planificación)
+      tags: [Sprint]
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "204":
+          description: Sprint eliminado
+        "409":
+          description: Sprint no está en estado planificación
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/sprints/{id}/estado:
+    patch:
+      operationId: cambiarEstadoSprint
+      summary: Cambia el estado del sprint
+      tags: [Sprint]
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+        - name: estado
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [PLANIFICACION, ACTIVO, CERRADO]
+          description: Nuevo estado del sprint
+      responses:
+        "200":
+          description: Estado cambiado exitosamente (grupo de sprints)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SprintResponse"
+              example:
+                - id: 101
+                  nombre: "Sprint-Global-2026-02"
+                  squadId: 1
+                  squadNombre: "Red"
+                  fechaInicio: "2026-02-23"
+                  fechaFin: "2026-03-08"
+                  objetivo: "Objetivo del sprint"
+                  estado: "ACTIVO"
+                  capacidadTotal: 320
+                  tareasPendientes: 12
+                  tareasEnProgreso: 5
+                  tareasCompletadas: 3
+                  createdAt: "2026-02-10T09:00:00Z"
+                - id: 102
+                  nombre: "Sprint-Global-2026-02"
+                  squadId: 2
+                  squadNombre: "Blue"
+                  fechaInicio: "2026-02-23"
+                  fechaFin: "2026-03-08"
+                  objetivo: "Objetivo del sprint"
+                  estado: "ACTIVO"
+                  capacidadTotal: 280
+                  tareasPendientes: 10
+                  tareasEnProgreso: 4
+                  tareasCompletadas: 2
+                  createdAt: "2026-02-10T09:00:00Z"
+        "400":
+          description: Transición de estado no permitida
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  # ═══════════════════════════════════════════════
+  # TAREAS (BLOQUE 3)
+  # ═══════════════════════════════════════════════
+  /api/v1/tareas:
+    get:
+      operationId: listarTareas
+      summary: Lista tareas con filtros y paginación
+      tags: [Tarea]
+      parameters:
+        - name: sprintId
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int64
+          description: Filtrar por sprint
+        - name: personaId
+          in: query
+          required: false
+          schema:
+            type: integer
+            format: int64
+          description: Filtrar por persona asignada
+        - name: estado
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [PENDIENTE, EN_PROGRESO, BLOQUEADO, COMPLETADA]
+          description: Filtrar por estado
+        - name: tipo
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [HISTORIA, TAREA, BUG, SPIKE]
+          description: Filtrar por tipo
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/SizeParam"
+      responses:
+        "200":
+          description: Lista paginada de tareas
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  content:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/TareaResponse"
+                  totalElements:
+                    type: integer
+                  totalPages:
+                    type: integer
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    post:
+      operationId: crearTarea
+      summary: Crea una nueva tarea dentro de un sprint
+      tags: [Tarea]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TareaRequest"
+      responses:
+        "201":
+          description: Tarea creada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TareaResponse"
+        "400":
+          description: Datos inválidos o validación fallida
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/tareas/{id}:
+    get:
+      operationId: obtenerTarea
+      summary: Obtiene una tarea por ID
+      tags: [Tarea]
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "200":
+          description: Tarea encontrada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TareaResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    patch:
+      operationId: actualizarTarea
+      summary: Actualiza una tarea (si está en estado permitido)
+      description: Permite actualizar horas, persona asignada, día de asignación, prioridad en tareas no completadas
+      tags: [Tarea]
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TareaRequest"
+      responses:
+        "200":
+          description: Tarea actualizada
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TareaResponse"
+        "400":
+          description: Datos inválidos o capacidad insuficiente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Tarea en estado incompatible para edición
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    delete:
+      operationId: eliminarTarea
+      summary: Elimina una tarea (solo si está pendiente)
+      tags: [Tarea]
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      responses:
+        "204":
+          description: Tarea eliminada
+        "409":
+          description: Tarea no está en estado pendiente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/tareas/{id}/estado:
+    patch:
+      operationId: cambiarEstadoTarea
+      summary: Cambia el estado de una tarea (máquina de estados)
+      tags: [Tarea]
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [nuevoEstado]
+              properties:
+                nuevoEstado:
+                  type: string
+                  enum: [PENDIENTE, EN_PROGRESO, BLOQUEADO, COMPLETADA]
+                  description: Nuevo estado
+      responses:
+        "200":
+          description: Estado actualizado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TareaResponse"
+        "400":
+          description: Transición de estado no permitida
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  # ═══════════════════════════════════════════════
+  # BLOQUEOS (BLOQUE 3)
+  # ═══════════════════════════════════════════════
+  /api/v1/bloqueos:
+    get:
+      operationId: listarBloqueos
+      summary: Lista bloqueos e impedimentos
+      tags: [Bloqueo]
+      parameters:
+        - name: estado
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [ABIERTO, EN_GESTION, RESUELTO]
+          description: Filtrar por estado
+        - name: tipo
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [DEPENDENCIA_EXTERNA, RECURSO, TECNICO, COMUNICACION, OTRO]
+          description: Filtrar por tipo
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/SizeParam"
+      responses:
+        "200":
+          description: Lista de bloqueos
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  content:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/BloqueoResponse"
+                  totalElements:
+                    type: integer
+                  totalPages:
+                    type: integer
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    post:
+      operationId: crearBloqueo
+      summary: Crea un nuevo bloqueo
+      tags: [Bloqueo]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BloqueoRequest"
+      responses:
+        "201":
+          description: Bloqueo creado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BloqueoResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/bloqueos/{id}/estado:
+    patch:
+      operationId: cambiarEstadoBloqueo
+      summary: Resuelve o actualiza estado de un bloqueo
+      tags: [Bloqueo]
+      parameters:
+        - $ref: "#/components/parameters/IdParam"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [nuevoEstado]
+              properties:
+                nuevoEstado:
+                  type: string
+                  enum: [ABIERTO, EN_GESTION, RESUELTO]
+                  description: Nuevo estado del bloqueo
+                nota:
+                  type: string
+                  maxLength: 1000
+                  description: Nota de actualización (ej. motivo de resolución)
+      responses:
+        "200":
+          description: Estado actualizado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BloqueoResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  # ═══════════════════════════════════════════════
+  # PLANIFICACIÓN - DASHBOARD & TIMELINE (BLOQUE 3)
+  # ═══════════════════════════════════════════════
+  /api/v1/planificacion/{sprintId}/dashboard:
+    get:
+      operationId: obtenerDashboardSprint
+      summary: Obtiene métricas y alertas del sprint
+      description: Proporciona resumen de capacidad, tareas por estado, ocupación por persona, alertas
+      tags: [Planificacion]
+      parameters:
+        - name: sprintId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: ID del sprint
+      responses:
+        "200":
+          description: Dashboard con métricas del sprint
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSprintResponse"
+        "404":
+          description: Sprint no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/planificacion/{sprintId}/timeline:
+    get:
+      operationId: obtenerTimelineSprint
+      summary: Obtiene vista timeline (Gantt) del sprint
+      description: Grid de personas × días con tareas asignadas, incluyendo información de capacidad
+      tags: [Planificacion]
+      parameters:
+        - name: sprintId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: ID del sprint
+      responses:
+        "200":
+          description: Timeline con tareas organizadas por persona y día
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TimelineSprintResponse"
+        "404":
+          description: Sprint no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /api/v1/planificacion/{sprintId}/timeline/export:
+    get:
+      operationId: exportarTimelineSprint
+      summary: Exporta la timeline del sprint a Excel
+      description: Genera un archivo Excel con las tareas por persona y día
+      tags: [Planificacion]
+      parameters:
+        - name: sprintId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: ID del sprint
+      responses:
+        "200":
+          description: Archivo Excel con la timeline del sprint
+          content:
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+        "404":
+          description: Sprint no encontrado
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
 # ═══════════════════════════════════════════════
 # COMPONENTS
 # ═══════════════════════════════════════════════
@@ -1784,3 +2406,387 @@ components:
         timestamp:
           type: string
           format: date-time
+    # ─────────────────────────────────────────────
+    # BLOQUE 3: SPRINT, TAREA, BLOQUEO
+    # ─────────────────────────────────────────────
+
+    SprintRequest:
+      type: object
+      required: [nombre, squadId, fechaInicio, objetivo]
+      properties:
+        nombre:
+          type: string
+          minLength: 3
+          maxLength: 100
+          description: Nombre único del sprint
+          example: "RED-Sprint-1"
+        squadId:
+          type: integer
+          format: int64
+          description: ID del squad asignado
+        fechaInicio:
+          type: string
+          format: date
+          description: Fecha de inicio (debe ser lunes)
+          example: "2026-02-24"
+        objetivo:
+          type: string
+          maxLength: 1000
+          description: Objetivo del sprint
+          example: "Implementar autenticación OAuth2"
+
+    SprintResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        nombre:
+          type: string
+        squadId:
+          type: integer
+          format: int64
+        squadNombre:
+          type: string
+        fechaInicio:
+          type: string
+          format: date
+        fechaFin:
+          type: string
+          format: date
+        objetivo:
+          type: string
+        estado:
+          type: string
+          enum: [PLANIFICACION, ACTIVO, CERRADO]
+        capacidadTotal:
+          type: number
+          format: double
+          description: Horas totales disponibles del squad
+        tareasPendientes:
+          type: integer
+        tareasEnProgreso:
+          type: integer
+        tareasCompletadas:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    TareaRequest:
+      type: object
+      required: [titulo, sprintId, tipo, categoria, estimacion, prioridad]
+      properties:
+        titulo:
+          type: string
+          minLength: 3
+          maxLength: 255
+          description: Título descriptivo de la tarea
+          example: "Implementar login con OAuth2"
+        sprintId:
+          type: integer
+          format: int64
+          description: ID del sprint al que pertenece
+        tipo:
+          type: string
+          enum: [HISTORIA, TAREA, BUG, SPIKE]
+          description: Tipo de tarea
+        categoria:
+          type: string
+          enum: [CORRECTIVO, EVOLUTIVO]
+          description: Categoría (correctivo = fix, evolutivo = feature)
+        estimacion:
+          type: number
+          format: double
+          minimum: 0.5
+          maximum: 40
+          description: Horas estimadas para completar
+          example: 8
+        prioridad:
+          type: string
+          enum: [BAJA, NORMAL, ALTA, BLOQUEANTE]
+          description: Nivel de prioridad
+        personaId:
+          type: integer
+          format: int64
+          nullable: true
+          description: ID de la persona asignada (opcional, asignable después)
+        diaAsignado:
+          type: integer
+          minimum: 1
+          maximum: 10
+          nullable: true
+          description: Día del sprint para asignar (1=L, 2=M, ..., 10=V semana 2)
+
+    TareaResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        titulo:
+          type: string
+        sprintId:
+          type: integer
+          format: int64
+        tipo:
+          type: string
+          enum: [HISTORIA, TAREA, BUG, SPIKE]
+        categoria:
+          type: string
+          enum: [CORRECTIVO, EVOLUTIVO]
+        estimacion:
+          type: number
+          format: double
+        prioridad:
+          type: string
+          enum: [BAJA, NORMAL, ALTA, BLOQUEANTE]
+        estado:
+          type: string
+          enum: [PENDIENTE, EN_PROGRESO, BLOQUEADO, COMPLETADA]
+        personaId:
+          type: integer
+          format: int64
+          nullable: true
+        personaNombre:
+          type: string
+          nullable: true
+        diaAsignado:
+          type: integer
+          nullable: true
+          description: Día asignado (1-10, L-V)
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    BloqueoRequest:
+      type: object
+      required: [titulo, tipo]
+      properties:
+        titulo:
+          type: string
+          minLength: 3
+          maxLength: 255
+          description: Título del bloqueo
+          example: "Servidor de producción caído"
+        descripcion:
+          type: string
+          maxLength: 2000
+          description: Descripción detallada del impedimento
+        tipo:
+          type: string
+          enum: [DEPENDENCIA_EXTERNA, RECURSO, TECNICO, COMUNICACION, OTRO]
+          description: Clasificación del bloqueo
+        responsableId:
+          type: integer
+          format: int64
+          nullable: true
+          description: ID de la persona responsable de resolver
+        tareaIds:
+          type: array
+          items:
+            type: integer
+            format: int64
+          description: IDs de tareas afectadas por este bloqueo
+
+    BloqueoResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        titulo:
+          type: string
+        descripcion:
+          type: string
+        tipo:
+          type: string
+          enum: [DEPENDENCIA_EXTERNA, RECURSO, TECNICO, COMUNICACION, OTRO]
+        estado:
+          type: string
+          enum: [ABIERTO, EN_GESTION, RESUELTO]
+        responsableId:
+          type: integer
+          format: int64
+          nullable: true
+        responsableNombre:
+          type: string
+          nullable: true
+        fechaResolucion:
+          type: string
+          format: date-time
+          nullable: true
+        notas:
+          type: string
+          nullable: true
+        tareaIds:
+          type: array
+          items:
+            type: integer
+            format: int64
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    DashboardSprintResponse:
+      type: object
+      description: Métricas y alertas del sprint
+      properties:
+        sprintId:
+          type: integer
+          format: int64
+        sprintNombre:
+          type: string
+        estado:
+          type: string
+          enum: [PLANIFICACION, ACTIVO, CERRADO]
+        fechaInicio:
+          type: string
+          format: date
+        fechaFin:
+          type: string
+          format: date
+        capacidadTotal:
+          type: number
+          format: double
+          description: Horas totales disponibles
+        horasAsignadas:
+          type: number
+          format: double
+          description: Horas asignadas a tareas
+        ocupacionPorcentaje:
+          type: number
+          format: double
+          description: Porcentaje de ocupación (asignadas/capacidad)*100
+        tareasPendientes:
+          type: integer
+        tareasEnProgreso:
+          type: integer
+        tareasBlockeadas:
+          type: integer
+        tareasCompletadas:
+          type: integer
+        personasConOcupacionExcesiva:
+          type: array
+          items:
+            type: object
+            properties:
+              personaId:
+                type: integer
+                format: int64
+              personaNombre:
+                type: string
+              ocupacion:
+                type: number
+                format: double
+              horasExceso:
+                type: number
+                format: double
+        horasCorrectivo:
+          type: number
+          format: double
+        horasEvolutivo:
+          type: number
+          format: double
+        ratioCorrectivo:
+          type: number
+          format: double
+          description: Porcentaje de correctivos vs total
+        bloqueosPendientes:
+          type: integer
+        alertas:
+          type: array
+          items:
+            type: object
+            properties:
+              tipo:
+                type: string
+                enum:
+                  [
+                    PERSONA_SOBREASIGNADA,
+                    TAREAS_BLOQUEADAS,
+                    TAREAS_SIN_ASIGNAR,
+                    CAPACIDAD_NO_UTILIZADA,
+                  ]
+              titulo:
+                type: string
+              descripcion:
+                type: string
+              severidad:
+                type: string
+                enum: [INFO, WARNING, ERROR]
+
+    TimelineSprintResponse:
+      type: object
+      description: Vista timeline (Gantt) del sprint
+      properties:
+        sprintId:
+          type: integer
+          format: int64
+        sprintNombre:
+          type: string
+        diasSemana:
+          type: array
+          items:
+            type: object
+            properties:
+              dia:
+                type: integer
+                description: "1=Lunes, 2=Martes, ..., 10=Viernes semana 2"
+              fecha:
+                type: string
+                format: date
+              nombre:
+                type: string
+                example: "Lunes 24 Feb"
+        personas:
+          type: array
+          items:
+            type: object
+            properties:
+              personaId:
+                type: integer
+                format: int64
+              personaNombre:
+                type: string
+              capacidadPorDia:
+                type: array
+                items:
+                  type: number
+                  format: double
+                  description: Horas disponibles por cada día
+        grid:
+          type: array
+          description: "Grid[i] = datos para persona i, contiene array de días con tareas"
+          items:
+            type: array
+            items:
+              type: object
+              properties:
+                dia:
+                  type: integer
+                tareas:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      tareaId:
+                        type: integer
+                        format: int64
+                      titulo:
+                        type: string
+                      estimacion:
+                        type: number
+                      tipo:
+                        type: string
+                      estado:
+                        type: string

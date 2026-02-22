@@ -33,6 +33,41 @@ interface Release {
 
 const CHANGELOG: Release[] = [
   {
+    version: "1.2.0",
+    fecha: "22/02/2026",
+    etiqueta: "Liberacion Planificacion",
+    cambios: [
+      {
+        id: "FEATURE-003",
+        tipo: "feature",
+        titulo: "Planificacion integral de sprints",
+        descripcion:
+          "Nueva pagina de Planificacion con selector global de sprints, vistas Timeline/Kanban/Dashboard y acciones para crear, activar, inactivar y eliminar sprints. Incluye gestion de tareas y acceso rapido a squads.",
+      },
+      {
+        id: "FEATURE-004",
+        tipo: "feature",
+        titulo: "Sprints globales por squad",
+        descripcion:
+          "La creacion de sprint se replica a todos los squads y el cambio de estado aplica al grupo por nombre y fechas.",
+      },
+      {
+        id: "MEJORA-002",
+        tipo: "mejora",
+        titulo: "Fin de sprint en domingo",
+        descripcion:
+          "El calculo de fecha fin ahora termina en domingo (inicio lunes + 13 dias) y se recalcula en actualizacion.",
+      },
+      {
+        id: "FEATURE-005",
+        tipo: "feature",
+        titulo: "Exportacion timeline a Excel (API)",
+        descripcion:
+          "Nuevo endpoint para exportar la timeline del sprint en formato XLSX.",
+      },
+    ],
+  },
+  {
     version: "1.1.0",
     fecha: "21/02/2026",
     etiqueta: "Bloque 2 Completado — Importación Excel",
@@ -227,9 +262,12 @@ function AboutPage() {
           <Info className="h-7 w-7 text-primary" />
         </div>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Acerca de KAOS</h1>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Bienvenido a KAOS
+          </h1>
           <p className="text-muted-foreground mt-1">
-            Historial de versiones y correctivos desplegados
+            Plataforma de Gestion de Equipos de Desarrollo con planificacion de
+            sprints, tareas y capacidad
           </p>
         </div>
       </div>

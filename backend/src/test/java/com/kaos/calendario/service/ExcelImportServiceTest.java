@@ -8,6 +8,7 @@ import static org.mockito.Mockito.when;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
@@ -180,7 +181,7 @@ class ExcelImportServiceTest {
         void testImportarExcelOmiteSinMapeo() throws IOException {
             // Given: Persona no encontrada, sin mapeo manual
             MultipartFile file = createExcelConPersonaDesconocida();
-            var mappings = java.util.Map.of();
+            Map<String, Long> mappings = java.util.Map.of();
 
             when(personaRepository.findByNombreIgnoreCase(anyString()))
                     .thenReturn(Optional.empty());

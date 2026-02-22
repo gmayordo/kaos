@@ -7,6 +7,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import com.kaos.planificacion.exception.CapacidadInsuficienteException;
+import com.kaos.planificacion.exception.SolapamientoSprintException;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
@@ -66,6 +68,26 @@ public class GlobalExceptionHandler {
         log.warn("Estado inválido: {}", ex.getMessage());
         return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(ErrorResponse.of("CONFLICT", ex.getMessage()));
+    }
+
+    @ExceptionHandler(CapacidadInsuficienteException.class)
+    public ResponseEntity<ErrorResponse> handleCapacidadInsuficiente(CapacidadInsuficienteException ex) {
+        List<String> details = List.of(
+                "personaId: " + ex.getPersonaId(),
+                "dia: " + ex.getDia(),
+                "disponibles: " + ex.getCapacidadDisponible(),
+                "requeridas: " + ex.getHorasRequeridas()
+        );
+        log.warn("Capacidad insuficiente: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ErrorResponse.of("CAPACIDAD_INSUFICIENTE", ex.getMessage(), details));
+    }
+
+    @ExceptionHandler(SolapamientoSprintException.class)
+    public ResponseEntity<ErrorResponse> handleSolapamientoSprint(SolapamientoSprintException ex) {
+        log.warn("Solapamiento de sprint: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ErrorResponse.of("SOLAPAMIENTO_SPRINT", ex.getMessage()));
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)

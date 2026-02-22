@@ -6,6 +6,7 @@ import {
   Clock,
   Home,
   Info,
+  LayoutDashboard,
   Users,
 } from "lucide-react";
 
@@ -44,6 +45,9 @@ function RootLayout() {
           </NavLink>
           <NavLink to="/calendario" icon={Calendar}>
             Calendario
+          </NavLink>
+          <NavLink to="/planificacion" icon={LayoutDashboard}>
+            Planificación
           </NavLink>
 
           {/* Sección Configuración */}
