@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import com.kaos.planificacion.exception.CapacidadInsuficienteException;
 import com.kaos.planificacion.exception.SolapamientoSprintException;
+import com.kaos.planificacion.exception.SprintNoEnPlanificacionException;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
@@ -88,6 +89,13 @@ public class GlobalExceptionHandler {
         log.warn("Solapamiento de sprint: {}", ex.getMessage());
         return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(ErrorResponse.of("SOLAPAMIENTO_SPRINT", ex.getMessage()));
+    }
+
+    @ExceptionHandler(SprintNoEnPlanificacionException.class)
+    public ResponseEntity<ErrorResponse> handleSprintNoEnPlanificacion(SprintNoEnPlanificacionException ex) {
+        log.warn("Operacion no permitida sobre sprint {}: estado actual {}", ex.getSprintId(), ex.getEstadoActual());
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
+                .body(ErrorResponse.of("SPRINT_ESTADO_INVALIDO", ex.getMessage()));
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)
