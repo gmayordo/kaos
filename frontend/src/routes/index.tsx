@@ -66,18 +66,7 @@ function IndexPage() {
     },
   );
 
-  const { data: sprintPlanData, isLoading: isLoadingSprintPlan } = useQuery({
-    queryKey: ["sprint-planificacion", selectedSquadId],
-    queryFn: () =>
-      sprintService.listar(0, 1, {
-        squadId: Number(selectedSquadId),
-        estado: "PLANIFICACION",
-      }),
-    enabled: selectedSquadId !== "",
-  });
-
   const sprintActivo = sprintActivoData?.content?.[0] ?? null;
-  const sprintPlanificado = sprintPlanData?.content?.[0] ?? null;
 
   const { data: sprintsSquadData } = useQuery({
     queryKey: ["sprints-squad", selectedSquadId],
@@ -100,12 +89,6 @@ function IndexPage() {
       enabled: !!sprintActivo,
     });
 
-  const { data: dashboardPlan, isLoading: isLoadingDashboardPlan } = useQuery({
-    queryKey: ["dashboard-sprint-plan", sprintPlanificado?.id],
-    queryFn: () => planificacionService.obtenerDashboard(sprintPlanificado!.id),
-    enabled: !!sprintPlanificado,
-  });
-
   const SprintCard = ({
     sprint,
     titulo,
@@ -115,12 +98,9 @@ function IndexPage() {
     titulo: string;
     isLoading: boolean;
   }) => {
-    const dashboard =
-      sprint?.estado === "ACTIVO" ? dashboardActivo : dashboardPlan;
+    const dashboard = sprintActivo?.id === sprint?.id ? dashboardActivo : null;
     const isLoadingDashboard =
-      sprint?.estado === "ACTIVO"
-        ? isLoadingDashboardActivo
-        : isLoadingDashboardPlan;
+      sprintActivo?.id === sprint?.id ? isLoadingDashboardActivo : false;
 
     return (
       <div className="rounded-lg border border-border bg-card p-5 space-y-3">

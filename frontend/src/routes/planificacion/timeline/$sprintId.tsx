@@ -12,7 +12,7 @@ import { tareaService } from "@/services/tareaService";
 import type { TareaRequest, TareaResponse } from "@/types/api";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, Kanban, LayoutDashboard, RefreshCw } from "lucide-react";
+import { ArrowLeft, Download, Kanban, LayoutDashboard, RefreshCw } from "lucide-react";
 import { useState } from "react";
 
 export const Route = createFileRoute("/planificacion/timeline/$sprintId")({
@@ -35,6 +35,7 @@ function TimelinePage() {
   );
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [personasOcultas] = useState<Set<number>>(new Set());
+  const [isExporting, setIsExporting] = useState(false);
 
   // ── Queries ───────────────────────────────────────────────────────────────
   const { data: sprint, isLoading: sprintLoading } = useQuery({
@@ -167,6 +168,25 @@ function TimelinePage() {
     }
   };
 
+  const handleExportarTimeline = async () => {
+    try {
+      setIsExporting(true);
+      const blob = await planificacionService.exportarTimelineExcel(id);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `timeline-${sprint?.nombre || "sprint"}-${new Date().toISOString().split("T")[0]}.xlsx`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Error exportando timeline:", error);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   const isLoading = sprintLoading || timelineLoading;
 
   return (
@@ -196,6 +216,14 @@ function TimelinePage() {
           >
             <RefreshCw className="h-4 w-4" />
             Actualizar
+          </button>
+          <button
+            onClick={handleExportarTimeline}
+            disabled={isExporting}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-md border border-border text-muted-foreground hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Download className="h-4 w-4" />
+            {isExporting ? "Descargando..." : "Descargar"}
           </button>
           <Link
             to="/planificacion/kanban/$sprintId"

@@ -29,4 +29,17 @@ export const planificacionService = {
     );
     return data;
   },
+
+  /**
+   * Descarga la timeline del sprint en formato Excel
+   */
+  exportarTimelineExcel: async (sprintId: number) => {
+    const response = await api.get<Blob>(
+      `/planificacion/${sprintId}/timeline/export`,
+      {
+        responseType: "blob",
+      },
+    );
+    return response.data;
+  },
 };
