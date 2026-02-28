@@ -172,12 +172,10 @@ const DayCell: FC<DayCellProps> = ({
 
 interface BarCardProps {
   bar: TareaEnLinea;
-  /** Número de columnas que abarca la barra */
-  span: number;
   onClick: (tareaId: number) => void;
 }
 
-const BarCard: FC<BarCardProps> = ({ bar, span: _span, onClick }) => {
+const BarCard: FC<BarCardProps> = ({ bar, onClick }) => {
   const isInformativa = bar.esInformativa === true;
   const isContinua = bar.origen === "CONTINUA";
   const bgColor = isContinua && bar.color ? bar.color : undefined;
@@ -454,7 +452,7 @@ const PersonaRow: FC<PersonaRowProps> = ({
     const barsStartingHere = barsAtDay.get(diaNum) ?? [];
 
     if (barsStartingHere.length > 0) {
-      // Calcular colspan para el maior diaFin de las barras de este día
+      // Calcular colspan para el mayor diaFin de las barras de este día
       const maxEndDay = barsStartingHere.reduce(
         (max, b) => Math.max(max, Math.min(b.diaFin!, weekEnd)),
         diaNum,
@@ -472,7 +470,6 @@ const PersonaRow: FC<PersonaRowProps> = ({
             <BarCard
               key={bar.tareaId}
               bar={bar}
-              span={Math.min(bar.diaFin!, weekEnd) - diaNum + 1}
               onClick={onClickTarea}
             />
           ))}
