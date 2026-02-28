@@ -18,7 +18,46 @@ spring:
   liquibase:
     change-log: classpath:db/changelog/db.changelog-master.yaml
 
+  # ── Correo SMTP ──────────────────────────────────────────────────────────
+  # Para Gmail: activar "Contraseñas de aplicación" en la cuenta Google
+  # (Seguridad → Verificación en dos pasos → Contraseñas de aplicación)
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: titulard@gmail.com
+    password: foehorvispbuissk
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
 logging:
   level:
     com.kaos: DEBUG
     org.hibernate.SQL: DEBUG
+
+# ── Jira — método de carga ────────────────────────────────────────────────────
+# API_REST : usa la API REST oficial de Jira (límite 200 calls/2h) [RECOMENDADO]
+# SELENIUM : usa ChromeDriver headless (sin límite de calls, más lento)
+# LOCAL    : lee únicamente de caché en BD (sin llamadas externas)
+jira:
+  load:
+    method: API_REST
+  batch:
+    enabled: false # true → sincronización automática cada 30 min
+    fixed-delay-ms: 1800000 # intervalo en ms (1800000 = 30 min)
+
+# ── Email post-sync ───────────────────────────────────────────────────────────
+# KAOS puede enviar un resumen HTML por correo tras cada sincronización Jira
+kaos:
+  email:
+    habilitado: false # true → activa el envío de correos
+    resumen-sync:
+      # Lista de destinatarios separados por coma que recibirán el resumen
+      destinatarios: "gmayordo@emeal.nttdata.com"
+      # true → solo envía correo cuando hay alertas CRITICO pendientes
+      enviar-solo-si-alertas: false
+      # true → también envía cuando el batch automático hace la sync
+      enviar-en-batch: false

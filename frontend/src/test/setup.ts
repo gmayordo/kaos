@@ -1,6 +1,10 @@
 import "@testing-library/jest-dom";
 import { setupServer } from "msw/node";
 
+// Capture originals before overriding to avoid infinite recursion
+const originalError = console.error.bind(console);
+const originalWarn = console.warn.bind(console);
+
 // Silence console warnings in tests
 global.console = {
   ...console,
@@ -12,13 +16,13 @@ global.console = {
     ) {
       return;
     }
-    console.error(...args);
+    originalError(...args);
   },
   warn: (...args: any[]) => {
     if (typeof args[0] === "string" && args[0].includes("act(")) {
       return;
     }
-    console.warn(...args);
+    originalWarn(...args);
   },
 };
 

@@ -11,15 +11,15 @@
 Incluye gestión integral de sprints, asignación diaria de tareas (Timeline), tablero Kanban,
 dashboard de métricas, gestión de bloqueos y resumen exportable del sprint.
 
-| Aspecto                           | Estado                                           |
-| --------------------------------- | ------------------------------------------------ |
-| **Bloque 3: Planificación**       | ✅ Completo (RF-009 a RF-015)                    |
-| **Backend — 4 controllers + servicios** | ✅ 18 endpoints REST                       |
+| Aspecto                                  | Estado                                     |
+| ---------------------------------------- | ------------------------------------------ |
+| **Bloque 3: Planificación**              | ✅ Completo (RF-009 a RF-015)              |
+| **Backend — 4 controllers + servicios**  | ✅ 18 endpoints REST                       |
 | **Frontend — 7 componentes + 4 páginas** | ✅ Timeline · Kanban · Dashboard · Resumen |
-| **Tests Backend**                 | ✅ 91 tests (service + controller)               |
-| **Tests Frontend**                | ✅ 46 tests Vitest (5 ficheros)                  |
-| **Excel Export**                  | ✅ Timeline exportable como XLSX                 |
-| **QA — Bugs corregidos**          | ✅ 2 (v1.2.1 hotfix)                             |
+| **Tests Backend**                        | ✅ 91 tests (service + controller)         |
+| **Tests Frontend**                       | ✅ 46 tests Vitest (5 ficheros)            |
+| **Excel Export**                         | ✅ Timeline exportable como XLSX           |
+| **QA — Bugs corregidos**                 | ✅ 2 (v1.2.1 hotfix)                       |
 
 ---
 
@@ -37,6 +37,7 @@ CRUD completo de sprints por squad con máquina de estados validada.
 - ✅ Selector global de sprint por squad con badges de estado visual
 
 **Endpoints:**
+
 ```
 GET    /api/v1/sprints                → Listar (filtro por squadId, estado, paginado)
 POST   /api/v1/sprints                → Crear sprint
@@ -56,6 +57,7 @@ DELETE /api/v1/sprints/{id}           → Eliminar (solo en PLANIFICACION)
 - ✅ Estado: `PENDIENTE → EN_PROGRESO → BLOQUEADO → COMPLETADA`
 
 **Endpoints:**
+
 ```
 GET    /api/v1/tareas                 → Listar (filtro por sprintId, personaId, estado)
 POST   /api/v1/tareas                 → Crear tarea
@@ -125,6 +127,7 @@ Registro y seguimiento de impedimentos del equipo.
 - ✅ Historial por sprint
 
 **Endpoints:**
+
 ```
 GET    /api/v1/bloqueos                      → Listar (filtro por estado)
 POST   /api/v1/bloqueos                      → Crear bloqueo
@@ -235,28 +238,28 @@ TimelineGrid         → Grid personas × días (drag & drop)
 
 ### Backend
 
-| Suite                     | Tests | Resultado   |
-| ------------------------- | ----- | ----------- |
-| SprintServiceTest         | 15    | ✅ 0 fallos |
-| TareaServiceTest          | 15    | ✅ 0 fallos |
-| BloqueoServiceTest        | 14    | ✅ 0 fallos |
-| PlanificacionServiceTest  | 9     | ✅ 0 fallos |
-| SprintControllerTest      | 11    | ✅ 0 fallos |
-| TareaControllerTest       | 11    | ✅ 0 fallos |
-| BloqueoControllerTest     | 10    | ✅ 0 fallos |
-| PlanificacionControllerTest | 6   | ✅ 0 fallos |
-| **Total**                 | **91**| **✅ PASS** |
+| Suite                       | Tests  | Resultado   |
+| --------------------------- | ------ | ----------- |
+| SprintServiceTest           | 15     | ✅ 0 fallos |
+| TareaServiceTest            | 15     | ✅ 0 fallos |
+| BloqueoServiceTest          | 14     | ✅ 0 fallos |
+| PlanificacionServiceTest    | 9      | ✅ 0 fallos |
+| SprintControllerTest        | 11     | ✅ 0 fallos |
+| TareaControllerTest         | 11     | ✅ 0 fallos |
+| BloqueoControllerTest       | 10     | ✅ 0 fallos |
+| PlanificacionControllerTest | 6      | ✅ 0 fallos |
+| **Total**                   | **91** | **✅ PASS** |
 
 ### Frontend (Vitest)
 
-| Fichero                      | Tests | Resultado   |
-| ---------------------------- | ----- | ----------- |
-| TaskCard.test.tsx             | 9     | ✅ 0 fallos |
-| KanbanBoard.test.tsx          | 5     | ✅ 0 fallos |
-| DashboardWidgets.test.tsx     | 6     | ✅ 0 fallos |
-| SprintSelector.test.tsx       | 10    | ✅ 0 fallos |
-| ModalTarea.test.tsx           | 16    | ✅ 0 fallos |
-| **Total**                     | **46**| **✅ PASS** |
+| Fichero                   | Tests  | Resultado   |
+| ------------------------- | ------ | ----------- |
+| TaskCard.test.tsx         | 9      | ✅ 0 fallos |
+| KanbanBoard.test.tsx      | 5      | ✅ 0 fallos |
+| DashboardWidgets.test.tsx | 6      | ✅ 0 fallos |
+| SprintSelector.test.tsx   | 10     | ✅ 0 fallos |
+| ModalTarea.test.tsx       | 16     | ✅ 0 fallos |
+| **Total**                 | **46** | **✅ PASS** |
 
 ### Correcciones durante tests
 
@@ -292,11 +295,11 @@ curl http://localhost:6060/actuator/health
 open http://localhost:6060/swagger-ui.html
 ```
 
-| Servicio  | URL                                   |
-| --------- | ------------------------------------- |
-| Frontend  | http://localhost:2000                 |
-| API REST  | http://localhost:6060/api/v1          |
-| Swagger   | http://localhost:6060/swagger-ui.html |
+| Servicio | URL                                   |
+| -------- | ------------------------------------- |
+| Frontend | http://localhost:2000                 |
+| API REST | http://localhost:6060/api/v1          |
+| Swagger  | http://localhost:6060/swagger-ui.html |
 
 ---
 
@@ -306,12 +309,12 @@ open http://localhost:6060/swagger-ui.html
 
 Reportado en https://github.com/gmayordo/kaos/issues/1
 
-| # | Problema | Prioridad |
-|---|----------|-----------|
-| 1 | Ausencias duplicadas al cargar mismo Excel dos veces | 🔴 Alta |
-| 2 | Mapeo columna→persona no persiste entre sesiones | 🟡 Media |
-| 3 | Persona en dos Excel diferentes se carga dos veces | 🟡 Media |
-| 4 | UI de configuración del comportamiento de importación | 🟢 Baja |
+| #   | Problema                                              | Prioridad |
+| --- | ----------------------------------------------------- | --------- |
+| 1   | Ausencias duplicadas al cargar mismo Excel dos veces  | 🔴 Alta   |
+| 2   | Mapeo columna→persona no persiste entre sesiones      | 🟡 Media  |
+| 3   | Persona en dos Excel diferentes se carga dos veces    | 🟡 Media  |
+| 4   | UI de configuración del comportamiento de importación | 🟢 Baja   |
 
 ---
 

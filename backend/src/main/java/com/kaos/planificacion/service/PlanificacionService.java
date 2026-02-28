@@ -10,9 +10,17 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import org.apache.poi.ss.usermodel.BorderStyle;
+import org.apache.poi.ss.usermodel.FillPatternType;
+import org.apache.poi.ss.usermodel.HorizontalAlignment;
+import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.VerticalAlignment;
+import org.apache.poi.ss.util.CellRangeAddress;
+import org.apache.poi.xssf.usermodel.XSSFCellStyle;
+import org.apache.poi.xssf.usermodel.XSSFColor;
+import org.apache.poi.xssf.usermodel.XSSFFont;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -167,6 +175,7 @@ public class PlanificacionService {
                         .tareaId(tarea.getId())
                         .titulo(tarea.getTitulo())
                         .estimacion(tarea.getEstimacion().doubleValue())
+                        .tipo(tarea.getTipo() != null ? tarea.getTipo().toString() : null)
                         .estado(tarea.getEstado().toString())
                         .prioridad(tarea.getPrioridad().toString())
                         .bloqueada(tarea.getBloqueadores() != null && !tarea.getBloqueadores().isEmpty())
@@ -226,55 +235,118 @@ public class PlanificacionService {
     }
 
     /**
-     * Exporta la timeline de un sprint a Excel.
-     * Columnas: Persona, DiaSemana, Fecha, Tarea.
+     * Exporta la timeline de un sprint a Excel en formato grid visual.
+     * Filas = personas, columnas = días del sprint (máx 10).
+     * Cada celda muestra el nombre de la tarea y las horas, con color según tipo.
      *
      * @param sprintId ID del sprint
      * @return bytes del archivo .xlsx
      */
     public byte[] exportarTimelineExcel(Long sprintId) {
         TimelineSprintResponse timeline = obtenerTimeline(sprintId);
+        int totalDias = 10;
+        DateTimeFormatter shortDate = DateTimeFormatter.ofPattern("dd/MM");
 
-        try (Workbook workbook = new XSSFWorkbook();
+        try (XSSFWorkbook workbook = new XSSFWorkbook();
              ByteArrayOutputStream out = new ByteArrayOutputStream()) {
 
             Sheet sheet = workbook.createSheet("Timeline");
+            sheet.setDefaultColumnWidth(18);
+            sheet.setColumnWidth(0, 28 * 256); // columna Persona más ancha
+
+            // ── Estilos ───────────────────────────────────────────────────────
+            XSSFCellStyle titleStyle = crearEstiloTitulo(workbook);
+            XSSFCellStyle headerStyle = crearEstiloHeader(workbook);
+            XSSFCellStyle personaStyle = crearEstiloPersona(workbook);
+            Map<String, XSSFCellStyle> tipoStyles = crearEstilosTipo(workbook);
+            XSSFCellStyle emptyStyle = crearEstiloVacio(workbook);
+
             int rowIdx = 0;
 
-            Row header = sheet.createRow(rowIdx++);
-            header.createCell(0).setCellValue("Persona");
-            header.createCell(1).setCellValue("DiaSemana");
-            header.createCell(2).setCellValue("Fecha");
-            header.createCell(3).setCellValue("Tarea");
+            // ── Fila 0: Título del sprint ─────────────────────────────────────
+            Row titleRow = sheet.createRow(rowIdx++);
+            titleRow.setHeightInPoints(28);
+            var titleCell = titleRow.createCell(0);
+            titleCell.setCellValue(timeline.sprintNombre() + "  ·  "
+                    + timeline.fechaInicio().format(shortDate)
+                    + " – " + timeline.fechaFin().format(shortDate));
+            titleCell.setCellStyle(titleStyle);
+            sheet.addMergedRegion(new CellRangeAddress(0, 0, 0, totalDias));
 
-            DateTimeFormatter dateFormatter = DateTimeFormatter.ISO_LOCAL_DATE;
+            // ── Fila 1: Cabecera de días ──────────────────────────────────────
+            Row headerRow = sheet.createRow(rowIdx++);
+            headerRow.setHeightInPoints(36);
+            var personaHeader = headerRow.createCell(0);
+            personaHeader.setCellValue("Persona");
+            personaHeader.setCellStyle(headerStyle);
 
+            for (int dia = 1; dia <= totalDias; dia++) {
+                LocalDate fecha = timeline.fechaInicio().plusDays(dia - 1L);
+                String label = mapDayOfWeekShort(fecha.getDayOfWeek()) + "\n" + fecha.format(shortDate);
+                var cell = headerRow.createCell(dia);
+                cell.setCellValue(label);
+                cell.setCellStyle(headerStyle);
+            }
+
+            // ── Filas de personas ─────────────────────────────────────────────
             for (TimelineSprintResponse.PersonaEnLinea persona : timeline.personas()) {
-                if (persona.dias() == null) {
-                    continue;
+                // Calcular cuántas filas necesita esta persona (máx tareas en un día)
+                int maxTareasPorDia = 1;
+                if (persona.dias() != null) {
+                    for (var dia : persona.dias()) {
+                        if (dia.tareas() != null && dia.tareas().size() > maxTareasPorDia) {
+                            maxTareasPorDia = dia.tareas().size();
+                        }
+                    }
                 }
 
-                for (TimelineSprintResponse.DiaConTareas dia : persona.dias()) {
-                    if (dia.tareas() == null || dia.tareas().isEmpty()) {
-                        continue;
-                    }
+                // Crear una fila Excel por cada slot de tarea
+                for (int slot = 0; slot < maxTareasPorDia; slot++) {
+                    Row row = sheet.createRow(rowIdx++);
+                    row.setHeightInPoints(40);
 
-                    LocalDate fecha = timeline.fechaInicio().plusDays(dia.dia() - 1L);
-                    String diaSemana = mapDayOfWeek(fecha.getDayOfWeek());
-
-                    for (TimelineSprintResponse.TareaEnLinea tarea : dia.tareas()) {
-                        Row row = sheet.createRow(rowIdx++);
-                        row.createCell(0).setCellValue(persona.personaNombre());
-                        row.createCell(1).setCellValue(diaSemana);
-                        row.createCell(2).setCellValue(fecha.format(dateFormatter));
-                        row.createCell(3).setCellValue(tarea.titulo());
+                    // Columna A: nombre de persona (solo en primer slot)
+                    var personaCell = row.createCell(0);
+                    if (slot == 0) {
+                        personaCell.setCellValue(persona.personaNombre());
                     }
+                    personaCell.setCellStyle(personaStyle);
+
+                    // Columnas 1-10: tarea del día en este slot
+                    for (int dia = 1; dia <= totalDias; dia++) {
+                        var cell = row.createCell(dia);
+                        TimelineSprintResponse.TareaEnLinea tarea = null;
+                        if (persona.dias() != null) {
+                            for (var diaConTareas : persona.dias()) {
+                                if (diaConTareas.dia() == dia) {
+                                    if (diaConTareas.tareas() != null && diaConTareas.tareas().size() > slot) {
+                                        tarea = diaConTareas.tareas().get(slot);
+                                    }
+                                    break;
+                                }
+                            }
+                        }
+                        if (tarea != null) {
+                            String horas = tarea.estimacion() != null
+                                    ? String.format("%.0fh", tarea.estimacion()) : "";
+                            cell.setCellValue(tarea.titulo() + (horas.isEmpty() ? "" : "  (" + horas + ")"));
+                            String tipo = tarea.tipo() != null ? tarea.tipo().toUpperCase() : "";
+                            cell.setCellStyle(tipoStyles.getOrDefault(tipo, tipoStyles.get("DEFAULT")));
+                        } else {
+                            cell.setCellStyle(emptyStyle);
+                        }
+                    }
+                }
+
+                // Fusionar columna A si hay más de un slot para esta persona
+                if (maxTareasPorDia > 1) {
+                    int startRow = rowIdx - maxTareasPorDia;
+                    sheet.addMergedRegion(new CellRangeAddress(startRow, rowIdx - 1, 0, 0));
                 }
             }
 
-            for (int i = 0; i < 4; i++) {
-                sheet.autoSizeColumn(i);
-            }
+            // Fijar primera columna (persona) y primeras 2 filas (título + header)
+            sheet.createFreezePane(1, 2);
 
             workbook.write(out);
             return out.toByteArray();
@@ -283,15 +355,114 @@ public class PlanificacionService {
         }
     }
 
-    private String mapDayOfWeek(DayOfWeek dayOfWeek) {
+    // ── Helpers de estilos Excel ──────────────────────────────────────────────
+
+    private XSSFCellStyle crearEstiloTitulo(XSSFWorkbook wb) {
+        XSSFCellStyle style = wb.createCellStyle();
+        style.setFillForegroundColor(new XSSFColor(new byte[]{(byte)15, (byte)23, (byte)42}, null)); // slate-900
+        style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        style.setAlignment(HorizontalAlignment.LEFT);
+        style.setVerticalAlignment(VerticalAlignment.CENTER);
+        aplicarBorde(style);
+        XSSFFont font = wb.createFont();
+        font.setBold(true);
+        font.setFontHeightInPoints((short)14);
+        font.setColor(new XSSFColor(new byte[]{(byte)248, (byte)250, (byte)252}, null)); // slate-50
+        style.setFont(font);
+        return style;
+    }
+
+    private XSSFCellStyle crearEstiloHeader(XSSFWorkbook wb) {
+        XSSFCellStyle style = wb.createCellStyle();
+        style.setFillForegroundColor(new XSSFColor(new byte[]{(byte)30, (byte)41, (byte)59}, null)); // slate-800
+        style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        style.setAlignment(HorizontalAlignment.CENTER);
+        style.setVerticalAlignment(VerticalAlignment.CENTER);
+        style.setWrapText(true);
+        aplicarBorde(style);
+        XSSFFont font = wb.createFont();
+        font.setBold(true);
+        font.setFontHeightInPoints((short)10);
+        font.setColor(new XSSFColor(new byte[]{(byte)148, (byte)163, (byte)184}, null)); // slate-400
+        style.setFont(font);
+        return style;
+    }
+
+    private XSSFCellStyle crearEstiloPersona(XSSFWorkbook wb) {
+        XSSFCellStyle style = wb.createCellStyle();
+        style.setFillForegroundColor(new XSSFColor(new byte[]{(byte)30, (byte)41, (byte)59}, null)); // slate-800
+        style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        style.setAlignment(HorizontalAlignment.LEFT);
+        style.setVerticalAlignment(VerticalAlignment.TOP);
+        style.setWrapText(false);
+        aplicarBorde(style);
+        XSSFFont font = wb.createFont();
+        font.setBold(true);
+        font.setFontHeightInPoints((short)10);
+        font.setColor(new XSSFColor(new byte[]{(byte)248, (byte)250, (byte)252}, null));
+        style.setFont(font);
+        return style;
+    }
+
+    private Map<String, XSSFCellStyle> crearEstilosTipo(XSSFWorkbook wb) {
+        Map<String, XSSFCellStyle> map = new HashMap<>();
+        // HISTORIA → violet-600  #7C3AED
+        map.put("HISTORIA", crearEstiloTarea(wb, new byte[]{(byte)124,(byte)58,(byte)237}));
+        // TAREA → sky-600  #0284C7
+        map.put("TAREA",    crearEstiloTarea(wb, new byte[]{(byte)2,  (byte)132,(byte)199}));
+        // BUG → red-600  #DC2626
+        map.put("BUG",      crearEstiloTarea(wb, new byte[]{(byte)220,(byte)38, (byte)38 }));
+        // SPIKE → amber-600  #D97706
+        map.put("SPIKE",    crearEstiloTarea(wb, new byte[]{(byte)217,(byte)119,(byte)6  }));
+        // DEFAULT → slate-600  #475569
+        map.put("DEFAULT",  crearEstiloTarea(wb, new byte[]{(byte)71, (byte)85, (byte)105}));
+        return map;
+    }
+
+    private XSSFCellStyle crearEstiloTarea(XSSFWorkbook wb, byte[] rgb) {
+        XSSFCellStyle style = wb.createCellStyle();
+        style.setFillForegroundColor(new XSSFColor(rgb, null));
+        style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        style.setAlignment(HorizontalAlignment.LEFT);
+        style.setVerticalAlignment(VerticalAlignment.CENTER);
+        style.setWrapText(true);
+        aplicarBorde(style);
+        XSSFFont font = wb.createFont();
+        font.setFontHeightInPoints((short)9);
+        font.setColor(new XSSFColor(new byte[]{(byte)255,(byte)255,(byte)255}, null));
+        style.setFont(font);
+        return style;
+    }
+
+    private XSSFCellStyle crearEstiloVacio(XSSFWorkbook wb) {
+        XSSFCellStyle style = wb.createCellStyle();
+        style.setFillForegroundColor(new XSSFColor(new byte[]{(byte)15,(byte)23,(byte)42}, null)); // slate-900
+        style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        aplicarBorde(style);
+        return style;
+    }
+
+    private void aplicarBorde(XSSFCellStyle style) {
+        style.setBorderTop(BorderStyle.THIN);
+        style.setBorderBottom(BorderStyle.THIN);
+        style.setBorderLeft(BorderStyle.THIN);
+        style.setBorderRight(BorderStyle.THIN);
+        style.setTopBorderColor(IndexedColors.GREY_50_PERCENT.getIndex());
+        style.setBottomBorderColor(IndexedColors.GREY_50_PERCENT.getIndex());
+        style.setLeftBorderColor(IndexedColors.GREY_50_PERCENT.getIndex());
+        style.setRightBorderColor(IndexedColors.GREY_50_PERCENT.getIndex());
+    }
+
+    private String mapDayOfWeekShort(DayOfWeek dayOfWeek) {
         return switch (dayOfWeek) {
-            case MONDAY -> "Lunes";
-            case TUESDAY -> "Martes";
-            case WEDNESDAY -> "Miercoles";
-            case THURSDAY -> "Jueves";
-            case FRIDAY -> "Viernes";
-            case SATURDAY -> "Sabado";
-            case SUNDAY -> "Domingo";
+            case MONDAY -> "Lun";
+            case TUESDAY -> "Mar";
+            case WEDNESDAY -> "Mié";
+            case THURSDAY -> "Jue";
+            case FRIDAY -> "Vie";
+            case SATURDAY -> "Sáb";
+            case SUNDAY -> "Dom";
         };
     }
+
 }

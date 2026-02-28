@@ -47,6 +47,7 @@ public record TimelineSprintResponse(
             Long tareaId,
             String titulo,
             Double estimacion,
+            String tipo,
             String estado,
             String prioridad,
             Boolean bloqueada

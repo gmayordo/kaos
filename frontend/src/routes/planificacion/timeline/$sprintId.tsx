@@ -86,7 +86,7 @@ function TimelinePage() {
       if (!original) throw new Error("Tarea no encontrada");
       const req: TareaRequest = {
         titulo: original.titulo,
-        sprintId: original.sprintId,
+        sprintId: id, // usar siempre el sprint actual para evitar sprintId null
         tipo: original.tipo,
         categoria: original.categoria,
         estimacion: original.estimacion,

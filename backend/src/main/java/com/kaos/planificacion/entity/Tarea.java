@@ -1,28 +1,27 @@
 package com.kaos.planificacion.entity;
 
+import java.math.BigDecimal;
+import java.util.HashSet;
+import java.util.Set;
 import org.hibernate.annotations.Comment;
 import com.kaos.common.model.BaseEntity;
 import com.kaos.persona.entity.Persona;
-import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
+import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import jakarta.persistence.Index;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
-import java.math.BigDecimal;
-import java.util.HashSet;
-import java.util.Set;
 
 /**
  * Tarea: Unidad de trabajo dentro de un sprint.
@@ -93,4 +92,24 @@ public class Tarea extends BaseEntity {
         inverseJoinColumns = @JoinColumn(name = "bloqueo_id")
     )
     private Set<Bloqueo> bloqueadores = new HashSet<>();
+
+    // ── Integración Jira (añadido en Bloque 4) ───────────────────────────────────
+
+    @Comment("Clave del issue en Jira vinculado a esta tarea (ej: PROJ-123)")
+    @Column(name = "jira_key", length = 50)
+    private String jiraKey;
+
+    @Comment("Cache del issue Jira del que procede esta tarea")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "jira_issue_id")
+    private com.kaos.jira.entity.JiraIssue jiraIssue;
+
+    @Comment("Indica si la tarea fue generada por importación desde Jira")
+    @Column(name = "es_de_jira", nullable = false)
+    private boolean esDeJira = false;
+
+    @Comment("Tarea padre KAOS — si existe, esta tarea es subtarea derivada de un issue hijo en Jira")
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "tarea_parent_id")
+    private Tarea tareaParent;
 }

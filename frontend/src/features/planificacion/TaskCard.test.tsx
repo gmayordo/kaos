@@ -46,7 +46,9 @@ describe("TaskCard", () => {
       render(<TaskCard tarea={mockTarea} variant="compact" />);
       // La variante compact sólo muestra icono, no texto del label.
       // Verificamos que el elemento tiene la clase de color del tipo HISTORIA.
-      const card = screen.getByRole("button", { name: /Tarea: Implementar login OAuth/i });
+      const card = screen.getByRole("button", {
+        name: /Tarea: Implementar login OAuth/i,
+      });
       expect(card).toHaveClass("bg-violet-500");
     });
   });

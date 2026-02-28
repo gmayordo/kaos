@@ -76,7 +76,10 @@ describe("DashboardWidgets", () => {
   it("muestra alertas cuando el dashboard contiene alertas", () => {
     const dashConAlertas: DashboardSprintResponse = {
       ...mockDashboard,
-      alertas: ["Sobreasignación en día 5: Juan Pérez", "Hay 2 bloqueos sin resolver"],
+      alertas: [
+        "Sobreasignación en día 5: Juan Pérez",
+        "Hay 2 bloqueos sin resolver",
+      ],
     };
     render(<DashboardWidgets dashboard={dashConAlertas} />);
     const lista = screen.getByRole("list", { name: /alertas/i });

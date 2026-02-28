@@ -81,7 +81,7 @@ log "Esperando health checks..."
 
 wait_healthy() {
   local name=$1
-  local max=30
+  local max=60   # 60 × 3s = 180s máx (Spring Boot + Liquibase puede tardar ~90s)
   local i=0
   while [ $i -lt $max ]; do
     status=$(docker inspect --format='{{.State.Health.Status}}' "$name" 2>/dev/null || echo "no-health")
@@ -90,10 +90,10 @@ wait_healthy() {
       return 0
     fi
     echo -n "."
-    sleep 2
+    sleep 3
     i=$((i+1))
   done
-  warn "$name tardó más de $((max*2))s en estar healthy (status: $status)"
+  warn "$name tardó más de $((max*3))s en estar healthy (status: $status)"
 }
 
 [ "$BUILD_TARGET" != "frontend" ] && wait_healthy "kaos-backend"

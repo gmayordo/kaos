@@ -29,6 +29,9 @@ public interface TareaMapper {
     @Mapping(target = "estado", expression = "java(tarea.getEstado().toString())")
     @Mapping(target = "diaCapacidadDisponible", ignore = true)
     @Mapping(target = "bloqueada", expression = "java(tarea.getBloqueadores() != null && !tarea.getBloqueadores().isEmpty())")
+    @Mapping(target = "tareaParentId", source = "tareaParent.id")
+    @Mapping(target = "jiraIssueSummary", source = "jiraIssue.summary")
+    @Mapping(target = "jiraEstimacionHoras", source = "jiraIssue.estimacionHoras")
     TareaResponse toResponse(Tarea tarea);
 
     List<TareaResponse> toResponseList(List<Tarea> tareas);

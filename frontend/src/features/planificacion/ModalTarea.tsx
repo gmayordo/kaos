@@ -3,18 +3,25 @@
  * Presentacional: recibe datos, emite submit/cancel.
  */
 
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { toast } from "@/lib/toast";
+import { tareaDependenciaService } from "@/services/tareaDependenciaService";
+import { tareaService } from "@/services/tareaService";
 import type {
   CategoriaTarea,
+  CrearDependenciaRequest,
   EstadoTarea,
   PersonaResponse,
   PrioridadTarea,
   TareaRequest,
   TareaResponse,
+  TipoDependencia,
   TipoTarea,
 } from "@/types/api";
-import { X } from "lucide-react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { ExternalLink, GitMerge, Plus, Trash2, X } from "lucide-react";
 import type { FC } from "react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 interface Props {
   /** Tarea existente para editar, o null para crear */
@@ -119,6 +126,7 @@ export const ModalTarea: FC<Props> = ({
   onDelete,
   isSubmitting = false,
 }) => {
+  const queryClient = useQueryClient();
   const [form, setForm] = useState<FormState>(
     tarea
       ? tareaToForm(tarea)
@@ -127,6 +135,53 @@ export const ModalTarea: FC<Props> = ({
   const [errors, setErrors] = useState<
     Partial<Record<keyof FormState, string>>
   >({});
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [addingDep, setAddingDep] = useState(false);
+  const [newDepTargetId, setNewDepTargetId] = useState("");
+  const [newDepTipo, setNewDepTipo] = useState<TipoDependencia>("ESTRICTA");
+  const modalRef = useRef<HTMLDivElement>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
+
+  // ── Dependencias (solo en edición) ─────────────────────────────
+  const { data: dependencias = [], refetch: refetchDeps } = useQuery({
+    queryKey: ["tarea-dependencias", tarea?.id],
+    queryFn: () => tareaDependenciaService.listar(tarea!.id),
+    enabled: !!tarea?.id,
+  });
+
+  // Tareas del sprint para el selector de dependencia
+  const { data: tareasSprintPage } = useQuery({
+    queryKey: ["tareas-sprint-selector", sprintId],
+    queryFn: () => tareaService.listar(0, 200, { sprintId }),
+    enabled: addingDep && !!sprintId,
+  });
+  const tareasParaSelector = (tareasSprintPage?.content ?? []).filter(
+    (t) => t.id !== tarea?.id,
+  );
+
+  const crearDepMutation = useMutation({
+    mutationFn: (req: CrearDependenciaRequest) =>
+      tareaDependenciaService.crear(tarea!.id, req),
+    onSuccess: () => {
+      toast.success("Dependencia añadida");
+      setAddingDep(false);
+      setNewDepTargetId("");
+      refetchDeps();
+      queryClient.invalidateQueries({ queryKey: ["tarea-dependencias"] });
+    },
+    onError: (err: any) =>
+      toast.error(err?.response?.data?.message ?? "Error al crear dependencia"),
+  });
+
+  const eliminarDepMutation = useMutation({
+    mutationFn: (depId: number) =>
+      tareaDependenciaService.eliminar(tarea!.id, depId),
+    onSuccess: () => {
+      toast.success("Dependencia eliminada");
+      refetchDeps();
+    },
+    onError: () => toast.error("Error al eliminar dependencia"),
+  });
 
   // Sincronizar cuando cambia la tarea (ej: abrir con distinta tarea)
   useEffect(() => {
@@ -137,6 +192,50 @@ export const ModalTarea: FC<Props> = ({
     );
     setErrors({});
   }, [tarea, sprintId, diaPreseleccionado, personaPreseleccionadaId]);
+
+  // Focus trap: Tab/Shift+Tab cycles within modal
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        onCancel();
+        return;
+      }
+      if (e.key !== "Tab") return;
+      const focusable = modalRef.current?.querySelectorAll<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+      );
+      if (!focusable || focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey) {
+        if (document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        }
+      } else {
+        if (document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    },
+    [onCancel],
+  );
+
+  // Body scroll lock + focus management
+  useEffect(() => {
+    previousFocusRef.current = document.activeElement as HTMLElement;
+    document.body.style.overflow = "hidden";
+    requestAnimationFrame(() => {
+      const firstInput = modalRef.current?.querySelector<HTMLElement>("input");
+      firstInput?.focus();
+    });
+    return () => {
+      document.body.style.overflow = "";
+      previousFocusRef.current?.focus();
+    };
+  }, []);
 
   const set = (field: keyof FormState, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -187,13 +286,17 @@ export const ModalTarea: FC<Props> = ({
       aria-modal="true"
       aria-labelledby="modal-tarea-titulo"
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+      onKeyDown={handleKeyDown}
     >
-      <div className="w-full max-w-lg rounded-xl bg-white shadow-xl dark:bg-gray-800">
+      <div
+        ref={modalRef}
+        className="w-full max-w-lg rounded-xl bg-card shadow-xl border border-border"
+      >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-gray-200 px-5 py-4 dark:border-gray-700">
+        <div className="flex items-center justify-between border-b border-border px-5 py-4">
           <h2
             id="modal-tarea-titulo"
-            className="text-base font-semibold text-gray-900 dark:text-gray-50"
+            className="text-base font-semibold text-foreground"
           >
             {tarea ? "Editar tarea" : "Nueva tarea"}
           </h2>
@@ -201,9 +304,9 @@ export const ModalTarea: FC<Props> = ({
             type="button"
             onClick={onCancel}
             aria-label="Cerrar modal"
-            className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:hover:bg-gray-700"
+            className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
           >
-            <X className="h-5 w-5" />
+            <X className="h-5 w-5" aria-hidden="true" />
           </button>
         </div>
 
@@ -214,9 +317,9 @@ export const ModalTarea: FC<Props> = ({
             <div>
               <label
                 htmlFor="tarea-titulo"
-                className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300"
+                className="mb-1 block text-sm font-medium text-foreground"
               >
-                Título <span className="text-red-500">*</span>
+                Título <span className="text-destructive">*</span>
               </label>
               <input
                 id="tarea-titulo"
@@ -224,12 +327,21 @@ export const ModalTarea: FC<Props> = ({
                 value={form.titulo}
                 onChange={(e) => set("titulo", e.target.value)}
                 placeholder="Título de la tarea"
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                 aria-required="true"
                 aria-invalid={!!errors.titulo}
+                aria-describedby={
+                  errors.titulo ? "tarea-titulo-error" : undefined
+                }
               />
               {errors.titulo && (
-                <p className="mt-1 text-xs text-red-500">{errors.titulo}</p>
+                <p
+                  id="tarea-titulo-error"
+                  className="mt-1 text-xs text-destructive"
+                  role="alert"
+                >
+                  {errors.titulo}
+                </p>
               )}
             </div>
 
@@ -238,7 +350,7 @@ export const ModalTarea: FC<Props> = ({
               <div>
                 <label
                   htmlFor="tarea-tipo"
-                  className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  className="mb-1 block text-sm font-medium text-foreground"
                 >
                   Tipo
                 </label>
@@ -246,7 +358,7 @@ export const ModalTarea: FC<Props> = ({
                   id="tarea-tipo"
                   value={form.tipo}
                   onChange={(e) => set("tipo", e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                 >
                   {TIPOS.map((t) => (
                     <option key={t.value} value={t.value}>
@@ -258,7 +370,7 @@ export const ModalTarea: FC<Props> = ({
               <div>
                 <label
                   htmlFor="tarea-categoria"
-                  className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  className="mb-1 block text-sm font-medium text-foreground"
                 >
                   Categoría
                 </label>
@@ -266,7 +378,7 @@ export const ModalTarea: FC<Props> = ({
                   id="tarea-categoria"
                   value={form.categoria}
                   onChange={(e) => set("categoria", e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                 >
                   {CATEGORIAS.map((c) => (
                     <option key={c.value} value={c.value}>
@@ -282,9 +394,9 @@ export const ModalTarea: FC<Props> = ({
               <div>
                 <label
                   htmlFor="tarea-estimacion"
-                  className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  className="mb-1 block text-sm font-medium text-foreground"
                 >
-                  Estimación (h) <span className="text-red-500">*</span>
+                  Estimación (h) <span className="text-destructive">*</span>
                 </label>
                 <input
                   id="tarea-estimacion"
@@ -294,12 +406,19 @@ export const ModalTarea: FC<Props> = ({
                   value={form.estimacion}
                   onChange={(e) => set("estimacion", e.target.value)}
                   placeholder="0"
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                   aria-required="true"
                   aria-invalid={!!errors.estimacion}
+                  aria-describedby={
+                    errors.estimacion ? "tarea-estimacion-error" : undefined
+                  }
                 />
                 {errors.estimacion && (
-                  <p className="mt-1 text-xs text-red-500">
+                  <p
+                    id="tarea-estimacion-error"
+                    className="mt-1 text-xs text-destructive"
+                    role="alert"
+                  >
                     {errors.estimacion}
                   </p>
                 )}
@@ -307,7 +426,7 @@ export const ModalTarea: FC<Props> = ({
               <div>
                 <label
                   htmlFor="tarea-prioridad"
-                  className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  className="mb-1 block text-sm font-medium text-foreground"
                 >
                   Prioridad
                 </label>
@@ -315,7 +434,7 @@ export const ModalTarea: FC<Props> = ({
                   id="tarea-prioridad"
                   value={form.prioridad}
                   onChange={(e) => set("prioridad", e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                 >
                   {PRIORIDADES.map((p) => (
                     <option key={p.value} value={p.value}>
@@ -331,7 +450,7 @@ export const ModalTarea: FC<Props> = ({
               <div>
                 <label
                   htmlFor="tarea-persona"
-                  className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  className="mb-1 block text-sm font-medium text-foreground"
                 >
                   Persona asignada
                 </label>
@@ -339,7 +458,7 @@ export const ModalTarea: FC<Props> = ({
                   id="tarea-persona"
                   value={form.personaId}
                   onChange={(e) => set("personaId", e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                 >
                   <option value="">Sin asignar</option>
                   {personas.map((p) => (
@@ -352,7 +471,7 @@ export const ModalTarea: FC<Props> = ({
               <div>
                 <label
                   htmlFor="tarea-dia"
-                  className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  className="mb-1 block text-sm font-medium text-foreground"
                 >
                   Día asignado (1–10)
                 </label>
@@ -364,11 +483,18 @@ export const ModalTarea: FC<Props> = ({
                   value={form.diaAsignado}
                   onChange={(e) => set("diaAsignado", e.target.value)}
                   placeholder="—"
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                   aria-invalid={!!errors.diaAsignado}
+                  aria-describedby={
+                    errors.diaAsignado ? "tarea-dia-error" : undefined
+                  }
                 />
                 {errors.diaAsignado && (
-                  <p className="mt-1 text-xs text-red-500">
+                  <p
+                    id="tarea-dia-error"
+                    className="mt-1 text-xs text-destructive"
+                    role="alert"
+                  >
                     {errors.diaAsignado}
                   </p>
                 )}
@@ -380,7 +506,7 @@ export const ModalTarea: FC<Props> = ({
               <div>
                 <label
                   htmlFor="tarea-estado"
-                  className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300"
+                  className="mb-1 block text-sm font-medium text-foreground"
                 >
                   Estado
                 </label>
@@ -388,7 +514,7 @@ export const ModalTarea: FC<Props> = ({
                   id="tarea-estado"
                   value={form.estado}
                   onChange={(e) => set("estado", e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+                  className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
                 >
                   {ESTADOS.map((s) => (
                     <option key={s.value} value={s.value}>
@@ -403,7 +529,7 @@ export const ModalTarea: FC<Props> = ({
             <div>
               <label
                 htmlFor="tarea-jira"
-                className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300"
+                className="mb-1 block text-sm font-medium text-foreground"
               >
                 Referencia Jira
               </label>
@@ -413,25 +539,228 @@ export const ModalTarea: FC<Props> = ({
                 value={form.referenciaJira}
                 onChange={(e) => set("referenciaJira", e.target.value)}
                 placeholder="KAOS-001"
-                className="w-full rounded-lg border border-gray-300 px-3 py-2 font-mono text-sm shadow-sm focus:border-blue-500 focus:outline-none dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100"
+                className="w-full rounded-lg border border-border bg-background px-3 py-2 font-mono text-sm shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
               />
             </div>
+
+            {/* ─── Sección Jira (Bloque 5): info de issue vinculado ─── */}
+            {tarea?.jiraIssueKey && (
+              <div className="rounded-lg border border-blue-400/30 bg-blue-500/5 p-3 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-blue-700 flex items-center gap-1">
+                    <GitMerge className="h-3.5 w-3.5" aria-hidden />
+                    Issue Jira
+                  </span>
+                  <a
+                    href={`#jira-${tarea.jiraIssueKey}`}
+                    className="text-xs text-blue-600 hover:underline flex items-center gap-0.5"
+                    aria-label={`Abrir issue ${tarea.jiraIssueKey} en Jira`}
+                  >
+                    {tarea.jiraIssueKey}
+                    <ExternalLink className="h-3 w-3" aria-hidden />
+                  </a>
+                </div>
+                {tarea.jiraIssueSummary && (
+                  <p className="text-xs text-foreground">
+                    {tarea.jiraIssueSummary}
+                  </p>
+                )}
+                {/* Barra de progreso: estimado KAOS → horas consumidas Jira */}
+                {tarea.jiraEstimacionHoras != null && (
+                  <div>
+                    <div className="flex justify-between text-xs text-muted-foreground mb-1">
+                      <span>Progreso Jira</span>
+                      <span>
+                        {tarea.jiraHorasConsumidas ?? 0}h / {tarea.estimacion}h
+                        estimadas
+                      </span>
+                    </div>
+                    {(() => {
+                      const pct = Math.min(
+                        100,
+                        Math.round(
+                          ((tarea.jiraHorasConsumidas ?? 0) /
+                            tarea.estimacion) *
+                            100,
+                        ),
+                      );
+                      const colorBar =
+                        pct >= 90
+                          ? "bg-destructive"
+                          : pct >= 70
+                            ? "bg-amber-500"
+                            : "bg-green-500";
+                      return (
+                        <div
+                          className="h-2 bg-muted rounded-full overflow-hidden"
+                          role="progressbar"
+                          aria-valuenow={pct}
+                          aria-valuemin={0}
+                          aria-valuemax={100}
+                          aria-label={`Progreso: ${pct}%`}
+                        >
+                          <div
+                            className={`h-2 rounded-full transition-all ${colorBar}`}
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                      );
+                    })()}
+                  </div>
+                )}
+                {/* Tarea padre */}
+                {tarea.tareaParentId && (
+                  <p className="text-xs text-muted-foreground">
+                    Subtarea de KAOS #{tarea.tareaParentId}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* ─── Sección Dependencias (Bloque 5) ─── */}
+            {tarea && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-foreground flex items-center gap-1">
+                    <GitMerge
+                      className="h-4 w-4 text-muted-foreground"
+                      aria-hidden
+                    />
+                    Dependencias
+                    {dependencias.length > 0 && (
+                      <span className="ml-1 text-xs bg-muted text-muted-foreground rounded-full px-1.5 py-0.5">
+                        {dependencias.length}
+                      </span>
+                    )}
+                  </span>
+                  {!addingDep && (
+                    <button
+                      type="button"
+                      onClick={() => setAddingDep(true)}
+                      className="flex items-center gap-1 text-xs text-primary hover:underline"
+                    >
+                      <Plus className="h-3.5 w-3.5" />
+                      Añadir
+                    </button>
+                  )}
+                </div>
+
+                {/* Lista de dependencias */}
+                {dependencias.length > 0 && (
+                  <ul className="space-y-1.5">
+                    {dependencias.map((dep) => (
+                      <li
+                        key={dep.id}
+                        className="flex items-center justify-between rounded border border-border bg-muted/30 px-2.5 py-1.5 text-xs"
+                      >
+                        <div>
+                          <span className="font-medium text-foreground">
+                            KAOS #{dep.tareaDestinoId}
+                          </span>
+                          <span className="ml-1 text-muted-foreground truncate">
+                            — {dep.tareaDestinoTitulo}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span
+                            className={`text-xs px-1.5 py-0.5 rounded border ${
+                              dep.tipo === "ESTRICTA"
+                                ? "bg-red-500/10 text-red-600 border-red-400/30"
+                                : "bg-amber-500/10 text-amber-600 border-amber-400/30"
+                            }`}
+                          >
+                            {dep.tipo}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => eliminarDepMutation.mutate(dep.id)}
+                            disabled={eliminarDepMutation.isPending}
+                            className="text-muted-foreground hover:text-destructive transition-colors disabled:opacity-50"
+                            aria-label={`Eliminar dependencia con ${dep.tareaDestinoTitulo}`}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
+                {/* Formulario añadir dependencia */}
+                {addingDep && (
+                  <div className="flex items-end gap-2 p-2.5 rounded border border-border bg-muted/20">
+                    <div className="flex-1">
+                      <label className="block text-xs text-muted-foreground mb-1">
+                        Tarea destino
+                      </label>
+                      <select
+                        value={newDepTargetId}
+                        onChange={(e) => setNewDepTargetId(e.target.value)}
+                        className="w-full px-2 py-1.5 rounded border border-border bg-background text-foreground text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+                        autoFocus
+                      >
+                        <option value="">Seleccionar...</option>
+                        {tareasParaSelector.map((t) => (
+                          <option key={t.id} value={t.id}>
+                            #{t.id} — {t.titulo}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs text-muted-foreground mb-1">
+                        Tipo
+                      </label>
+                      <select
+                        value={newDepTipo}
+                        onChange={(e) =>
+                          setNewDepTipo(e.target.value as TipoDependencia)
+                        }
+                        className="px-2 py-1.5 rounded border border-border bg-background text-foreground text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+                      >
+                        <option value="ESTRICTA">Estricta</option>
+                        <option value="SUAVE">Suave</option>
+                      </select>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!newDepTargetId) return;
+                        crearDepMutation.mutate({
+                          tareaDestinoId: Number(newDepTargetId),
+                          tipo: newDepTipo,
+                        });
+                      }}
+                      disabled={!newDepTargetId || crearDepMutation.isPending}
+                      className="px-3 py-1.5 bg-primary text-primary-foreground rounded text-xs font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
+                    >
+                      {crearDepMutation.isPending ? "..." : "Añadir"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAddingDep(false);
+                        setNewDepTargetId("");
+                      }}
+                      className="px-2 py-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Footer */}
-          <div className="flex items-center justify-between gap-2 border-t border-gray-200 px-5 py-3 dark:border-gray-700">
+          <div className="flex items-center justify-between gap-2 border-t border-border px-5 py-3">
             <div>
               {tarea && onDelete && (
                 <button
                   type="button"
-                  onClick={() => {
-                    const confirm = window.confirm(
-                      "¿Eliminar esta tarea? Esta accion no se puede deshacer.",
-                    );
-                    if (confirm) onDelete(tarea.id);
-                  }}
+                  onClick={() => setShowDeleteConfirm(true)}
                   disabled={isSubmitting}
-                  className="rounded-lg border border-red-200 bg-red-50 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-100 disabled:opacity-50 dark:border-red-900 dark:bg-red-900/20 dark:text-red-300 dark:hover:bg-red-900/30"
+                  className="rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-2 text-sm font-medium text-destructive hover:bg-destructive/20 disabled:opacity-50 transition-colors"
                 >
                   Eliminar
                 </button>
@@ -441,14 +770,14 @@ export const ModalTarea: FC<Props> = ({
               type="button"
               onClick={onCancel}
               disabled={isSubmitting}
-              className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 dark:border-gray-600 dark:text-gray-300 dark:hover:bg-gray-700"
+              className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-muted disabled:opacity-50 transition-colors"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="rounded-lg bg-blue-500 px-4 py-2 text-sm font-medium text-white hover:bg-blue-600 disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
             >
               {isSubmitting
                 ? "Guardando..."
@@ -458,6 +787,22 @@ export const ModalTarea: FC<Props> = ({
             </button>
           </div>
         </form>
+
+        {/* Confirm delete dialog */}
+        {tarea && onDelete && (
+          <ConfirmDialog
+            isOpen={showDeleteConfirm}
+            onConfirm={() => {
+              setShowDeleteConfirm(false);
+              onDelete(tarea.id);
+            }}
+            onCancel={() => setShowDeleteConfirm(false)}
+            title="Eliminar tarea"
+            description={`¿Eliminar la tarea "${tarea.titulo}"? Esta acción no se puede deshacer.`}
+            variant="danger"
+            confirmText="Eliminar"
+          />
+        )}
       </div>
     </div>
   );

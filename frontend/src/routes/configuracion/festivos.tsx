@@ -1,8 +1,12 @@
+import { ConfirmDialog } from "@/components/ui";
 import { FestivoForm } from "@/features/calendario/FestivoForm";
+import { toast } from "@/lib/toast";
+import { useDocumentTitle } from "@/lib/useDocumentTitle";
 import { festivoService, type FestivoFilters } from "@/services/festivoService";
 import type { FestivoRequest, FestivoResponse } from "@/types/api";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { Plus } from "lucide-react";
 import { useState } from "react";
 
 export const Route = createFileRoute("/configuracion/festivos")({
@@ -11,6 +15,7 @@ export const Route = createFileRoute("/configuracion/festivos")({
 
 function FestivosPage() {
   const queryClient = useQueryClient();
+  useDocumentTitle("Festivos");
   const [filters, setFilters] = useState<FestivoFilters>({
     anio: new Date().getFullYear(),
   });
@@ -21,6 +26,10 @@ function FestivosPage() {
   const [csvResult, setCsvResult] = useState<{
     ok: number;
     errors: number;
+  } | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<{
+    id: number;
+    descripcion: string;
   } | null>(null);
 
   // Query festivos
@@ -40,7 +49,9 @@ function FestivosPage() {
       queryClient.invalidateQueries({ queryKey: ["festivos"] });
       setIsFormOpen(false);
       setEditingFestivo(null);
+      toast.success("Festivo creado correctamente");
     },
+    onError: () => toast.error("Error al crear el festivo"),
   });
 
   const actualizarMutation = useMutation({
@@ -50,14 +61,18 @@ function FestivosPage() {
       queryClient.invalidateQueries({ queryKey: ["festivos"] });
       setIsFormOpen(false);
       setEditingFestivo(null);
+      toast.success("Festivo actualizado correctamente");
     },
+    onError: () => toast.error("Error al actualizar el festivo"),
   });
 
   const eliminarMutation = useMutation({
     mutationFn: festivoService.eliminar,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["festivos"] });
+      toast.success("Festivo eliminado");
     },
+    onError: () => toast.error("Error al eliminar el festivo"),
   });
 
   const csvMutation = useMutation({
@@ -65,7 +80,9 @@ function FestivosPage() {
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ["festivos"] });
       setCsvResult({ ok: result.exitosas, errors: result.errores.length });
+      toast.success(`${result.exitosas} festivos importados`);
     },
+    onError: () => toast.error("Error al importar CSV"),
   });
 
   const handleSubmit = (data: FestivoRequest) => {
@@ -82,9 +99,7 @@ function FestivosPage() {
   };
 
   const handleDelete = (id: number, descripcion: string) => {
-    if (confirm(`¿Eliminar el festivo "${descripcion}"?`)) {
-      eliminarMutation.mutate(id);
-    }
+    setDeleteConfirm({ id, descripcion });
   };
 
   const handleCsvUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -100,8 +115,11 @@ function FestivosPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-full py-16">
-        <div className="text-lg text-muted-foreground">
+      <div
+        className="flex items-center justify-center h-full py-16"
+        role="status"
+      >
+        <div className="text-lg text-muted-foreground animate-pulse">
           Cargando festivos...
         </div>
       </div>
@@ -110,8 +128,16 @@ function FestivosPage() {
 
   if (error) {
     return (
-      <div className="flex items-center justify-center h-full py-16">
-        <div className="text-red-500">Error al cargar festivos</div>
+      <div className="flex flex-col items-center justify-center h-full py-16 gap-3">
+        <div className="text-destructive">Error al cargar festivos</div>
+        <button
+          onClick={() =>
+            queryClient.invalidateQueries({ queryKey: ["festivos"] })
+          }
+          className="text-sm text-primary hover:underline"
+        >
+          Reintentar
+        </button>
       </div>
     );
   }
@@ -175,9 +201,10 @@ function FestivosPage() {
               setEditingFestivo(null);
               setIsFormOpen(true);
             }}
-            className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+            className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
           >
-            + Nuevo festivo
+            <Plus className="h-4 w-4" aria-hidden="true" />
+            Nuevo festivo
           </button>
         </div>
       </div>
@@ -202,9 +229,16 @@ function FestivosPage() {
       )}
 
       {/* Filtros */}
-      <div className="flex items-center gap-4">
-        <label className="text-sm font-medium">Año:</label>
+      <div
+        className="flex items-center gap-4"
+        role="group"
+        aria-label="Filtros de festivos"
+      >
+        <label htmlFor="festivo-filter-anio" className="text-sm font-medium">
+          Año:
+        </label>
         <select
+          id="festivo-filter-anio"
           value={filters.anio || ""}
           onChange={(e) =>
             setFilters((prev) => ({
@@ -212,7 +246,7 @@ function FestivosPage() {
               anio: e.target.value ? Number(e.target.value) : undefined,
             }))
           }
-          className="rounded-md border border-zinc-300 px-3 py-1.5 text-sm"
+          className="rounded-md border border-border px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
         >
           {[2023, 2024, 2025, 2026, 2027].map((y) => (
             <option key={y} value={y}>
@@ -221,8 +255,11 @@ function FestivosPage() {
           ))}
         </select>
 
-        <label className="text-sm font-medium">Tipo:</label>
+        <label htmlFor="festivo-filter-tipo" className="text-sm font-medium">
+          Tipo:
+        </label>
         <select
+          id="festivo-filter-tipo"
           value={filters.tipo || ""}
           onChange={(e) =>
             setFilters((prev) => ({
@@ -230,7 +267,7 @@ function FestivosPage() {
               tipo: e.target.value || undefined,
             }))
           }
-          className="rounded-md border border-zinc-300 px-3 py-1.5 text-sm"
+          className="rounded-md border border-border px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
         >
           <option value="">Todos</option>
           <option value="NACIONAL">Nacional</option>
@@ -244,76 +281,120 @@ function FestivosPage() {
       </div>
 
       {/* Tabla */}
-      <div className="rounded-md border border-zinc-200 bg-white overflow-hidden">
+      <div
+        className="rounded-md border border-border bg-card overflow-hidden"
+        role="region"
+        aria-label="Tabla de festivos"
+      >
         {!festivos?.content?.length ? (
-          <div className="px-4 py-12 text-center text-sm text-zinc-500">
+          <div className="px-4 py-12 text-center text-sm text-muted-foreground">
             No hay festivos para los filtros seleccionados
           </div>
         ) : (
-          <table className="w-full text-sm">
-            <thead className="border-b border-zinc-200 bg-zinc-50">
-              <tr>
-                <th className="px-4 py-3 text-left font-medium text-zinc-700">
-                  Fecha
-                </th>
-                <th className="px-4 py-3 text-left font-medium text-zinc-700">
-                  Descripción
-                </th>
-                <th className="px-4 py-3 text-left font-medium text-zinc-700">
-                  Tipo
-                </th>
-                <th className="px-4 py-3 text-left font-medium text-zinc-700">
-                  Ciudad
-                </th>
-                <th className="px-4 py-3 text-right font-medium text-zinc-700">
-                  Acciones
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-zinc-100">
-              {festivos.content.map((festivo) => (
-                <tr key={festivo.id} className="hover:bg-zinc-50">
-                  <td className="px-4 py-3 font-medium tabular-nums">
-                    {new Intl.DateTimeFormat("es-ES", {
-                      day: "2-digit",
-                      month: "short",
-                      year: "numeric",
-                    }).format(new Date(festivo.fecha))}
-                  </td>
-                  <td className="px-4 py-3">{festivo.descripcion}</td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${
-                        tipoColor[festivo.tipo] ?? "bg-zinc-100 text-zinc-700"
-                      }`}
-                    >
-                      {festivo.tipo}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">{festivo.ciudad}</td>
-                  <td className="px-4 py-3 text-right">
-                    <button
-                      onClick={() => handleEdit(festivo)}
-                      className="mr-2 text-sm text-zinc-500 hover:text-zinc-900"
-                    >
-                      Editar
-                    </button>
-                    <button
-                      onClick={() =>
-                        handleDelete(festivo.id, festivo.descripcion)
-                      }
-                      disabled={eliminarMutation.isPending}
-                      className="text-sm text-red-400 hover:text-red-700 disabled:opacity-50"
-                    >
-                      Eliminar
-                    </button>
-                  </td>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm min-w-[600px]">
+              <thead className="border-b border-border bg-muted/50">
+                <tr>
+                  <th
+                    scope="col"
+                    className="px-4 py-3 text-left font-medium text-muted-foreground"
+                  >
+                    Fecha
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-4 py-3 text-left font-medium text-muted-foreground"
+                  >
+                    Descripción
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-4 py-3 text-left font-medium text-muted-foreground"
+                  >
+                    Tipo
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-4 py-3 text-left font-medium text-muted-foreground"
+                  >
+                    Ciudad
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-4 py-3 text-right font-medium text-muted-foreground"
+                  >
+                    Acciones
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {festivos.content.map((festivo, index) => (
+                  <tr
+                    key={festivo.id}
+                    className={`hover:bg-muted/50 ${index % 2 === 1 ? "bg-muted/20" : ""}`}
+                  >
+                    <td className="px-4 py-3 font-medium tabular-nums">
+                      {new Intl.DateTimeFormat("es-ES", {
+                        day: "2-digit",
+                        month: "short",
+                        year: "numeric",
+                      }).format(new Date(festivo.fecha))}
+                    </td>
+                    <td className="px-4 py-3">{festivo.descripcion}</td>
+                    <td className="px-4 py-3">
+                      <span
+                        className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${
+                          tipoColor[festivo.tipo] ??
+                          "bg-muted text-muted-foreground"
+                        }`}
+                        title={`Tipo: ${festivo.tipo}`}
+                      >
+                        {festivo.tipo}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">{festivo.ciudad}</td>
+                    <td className="px-4 py-3 text-right">
+                      <button
+                        onClick={() => handleEdit(festivo)}
+                        aria-label={`Editar festivo ${festivo.descripcion}`}
+                        className="mr-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        Editar
+                      </button>
+                      <button
+                        onClick={() =>
+                          handleDelete(festivo.id, festivo.descripcion)
+                        }
+                        disabled={eliminarMutation.isPending}
+                        aria-label={`Eliminar festivo ${festivo.descripcion}`}
+                        className="text-sm text-destructive/70 hover:text-destructive disabled:opacity-50 transition-colors"
+                      >
+                        Eliminar
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
+
+      {/* ConfirmDialog for delete */}
+      <ConfirmDialog
+        isOpen={!!deleteConfirm}
+        onCancel={() => setDeleteConfirm(null)}
+        onConfirm={() => {
+          if (deleteConfirm) {
+            eliminarMutation.mutate(deleteConfirm.id);
+            setDeleteConfirm(null);
+          }
+        }}
+        title="Eliminar festivo"
+        description={`¿Estás seguro de eliminar el festivo "${deleteConfirm?.descripcion ?? ""}"?`}
+        confirmText="Eliminar"
+        variant="danger"
+      />
 
       {/* Form Modal */}
       {isFormOpen && (

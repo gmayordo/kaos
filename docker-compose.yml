@@ -8,7 +8,8 @@ services:
     ports:
       - "${FRONTEND_PORT:-2000}:80"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     restart: always
     networks:
       - postgres_ehcos-network
@@ -26,6 +27,12 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-container:5432/${DB_NAME:-kaosdb}
       SPRING_DATASOURCE_USERNAME: ${DB_USER:-postgres}
       SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-postgres}
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/actuator/health"]
+      interval: 15s
+      timeout: 10s
+      start_period: 90s
+      retries: 5
     restart: always
     networks:
       - postgres_ehcos-network

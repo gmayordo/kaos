@@ -95,7 +95,9 @@ describe("SprintSelector", () => {
     render(
       <SprintSelector {...defaultProps} sprintSeleccionado={sprints[1]} />,
     );
-    expect(screen.getByRole("button", { name: /inactivar/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /inactivar/i }),
+    ).toBeInTheDocument();
   });
 
   it("muestra el estado como badge visible", () => {

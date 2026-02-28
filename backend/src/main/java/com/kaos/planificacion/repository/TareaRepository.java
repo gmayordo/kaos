@@ -1,15 +1,14 @@
 package com.kaos.planificacion.repository;
 
-import com.kaos.planificacion.entity.Tarea;
-import com.kaos.planificacion.entity.EstadoTarea;
+import java.math.BigDecimal;
+import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
-
-import java.math.BigDecimal;
-import java.util.List;
+import com.kaos.planificacion.entity.EstadoTarea;
+import com.kaos.planificacion.entity.Tarea;
 
 /**
  * Repositorio para operaciones sobre Tarea.
@@ -97,4 +96,28 @@ public interface TareaRepository extends JpaRepository<Tarea, Long> {
      * Cuenta tareas de un sprint con estado específico.
      */
     Long countBySprintIdAndEstado(Long sprintId, EstadoTarea estado);
+
+    /**
+     * Todas las tareas de un sprint sin paginación.
+     * Usado por el motor de alertas SpEL para cargar el contexto completo.
+     *
+     * @param sprintId ID del sprint
+     * @return lista de tareas del sprint
+     */
+    List<Tarea> findAllBySprintId(Long sprintId);
+
+    /**
+     * Tareas de un sprint vinculadas a una issue Jira (jiraKey no nulo).
+     * Usado para construir el mapa jiraKey→Tarea en el motor de alertas.
+     *
+     * @param sprintId ID del sprint
+     * @return tareas con jiraKey asignado
+     */
+    @Query("""
+            SELECT t FROM Tarea t
+            WHERE t.sprint.id = :sprintId
+              AND t.jiraKey IS NOT NULL
+            """)
+    List<Tarea> findBySprintIdWithJiraKey(
+            @org.springframework.data.repository.query.Param("sprintId") Long sprintId);
 }

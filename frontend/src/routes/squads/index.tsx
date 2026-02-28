@@ -1,8 +1,13 @@
+import { AccessibleModal } from "@/components/ui/AccessibleModal";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { Tooltip } from "@/components/ui/Tooltip";
+import { toast } from "@/lib/toast";
+import { useDocumentTitle } from "@/lib/useDocumentTitle";
 import { squadService } from "@/services/squadService";
 import type { SquadRequest, SquadResponse } from "@/types/api";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Calendar, Users } from "lucide-react";
+import { Calendar, Plus, Users } from "lucide-react";
 import { useState } from "react";
 
 export const Route = createFileRoute("/squads/")({
@@ -16,6 +21,12 @@ function SquadsPage() {
   >(undefined);
   const [editingSquad, setEditingSquad] = useState<SquadResponse | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [desactivarConfirm, setDesactivarConfirm] = useState<{
+    id: number;
+    nombre: string;
+  } | null>(null);
+
+  useDocumentTitle("Squads");
 
   // Query para listar squads
   const {
@@ -33,7 +44,9 @@ function SquadsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["squads"] });
       setIsFormOpen(false);
+      toast.success("Squad creado correctamente");
     },
+    onError: () => toast.error("Error al crear squad"),
   });
 
   // Mutation para actualizar
@@ -44,7 +57,9 @@ function SquadsPage() {
       queryClient.invalidateQueries({ queryKey: ["squads"] });
       setEditingSquad(null);
       setIsFormOpen(false);
+      toast.success("Squad actualizado");
     },
+    onError: () => toast.error("Error al actualizar squad"),
   });
 
   // Mutation para desactivar
@@ -52,6 +67,12 @@ function SquadsPage() {
     mutationFn: squadService.desactivar,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["squads"] });
+      setDesactivarConfirm(null);
+      toast.success("Squad desactivado");
+    },
+    onError: () => {
+      setDesactivarConfirm(null);
+      toast.error("Error al desactivar squad");
     },
   });
 
@@ -68,10 +89,8 @@ function SquadsPage() {
     setIsFormOpen(true);
   };
 
-  const handleDesactivar = (id: number) => {
-    if (confirm("¿Estás seguro de desactivar este squad?")) {
-      desactivarMutation.mutate(id);
-    }
+  const handleDesactivar = (squad: SquadResponse) => {
+    setDesactivarConfirm({ id: squad.id, nombre: squad.nombre });
   };
 
   const handleNewSquad = () => {
@@ -81,19 +100,29 @@ function SquadsPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <div className="text-lg text-muted-foreground">Cargando squads...</div>
+      <div className="flex items-center justify-center h-full" role="status">
+        <div className="text-lg text-muted-foreground">
+          <span className="animate-pulse">Cargando squads...</span>
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex items-center justify-center h-full">
+      <div className="flex flex-col items-center justify-center h-full gap-4">
         <div className="text-lg text-destructive">
           Error al cargar squads:{" "}
           {error instanceof Error ? error.message : "Error desconocido"}
         </div>
+        <button
+          onClick={() =>
+            queryClient.invalidateQueries({ queryKey: ["squads"] })
+          }
+          className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
+        >
+          Reintentar
+        </button>
       </div>
     );
   }
@@ -112,14 +141,15 @@ function SquadsPage() {
         </div>
         <button
           onClick={handleNewSquad}
-          className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors"
         >
-          + Nuevo Squad
+          <Plus className="h-4 w-4" aria-hidden="true" />
+          Nuevo Squad
         </button>
       </div>
 
       {/* Filtros */}
-      <div className="flex gap-2">
+      <div className="flex gap-2" role="group" aria-label="Filtrar por estado">
         <button
           onClick={() => setFiltroEstado(undefined)}
           className={`px-3 py-1.5 text-sm rounded-md transition-colors ${
@@ -159,18 +189,39 @@ function SquadsPage() {
             key={squad.id}
             squad={squad}
             onEdit={() => handleEdit(squad)}
-            onDesactivar={() => handleDesactivar(squad.id)}
+            onDesactivar={() => handleDesactivar(squad)}
           />
         ))}
       </div>
 
       {squadList.length === 0 && (
         <div className="bg-muted/50 border border-dashed rounded-lg px-4 py-12 text-center text-muted-foreground">
-          No hay squads{" "}
-          {filtroEstado ? `en estado ${filtroEstado}` : "disponibles"}. Crea el
-          primero.
+          <p>
+            No hay squads{" "}
+            {filtroEstado ? `en estado ${filtroEstado}` : "disponibles"}.
+          </p>
+          <button
+            onClick={handleNewSquad}
+            className="mt-3 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors text-sm"
+          >
+            Crear primer squad
+          </button>
         </div>
       )}
+
+      {/* ConfirmDialog para desactivar */}
+      <ConfirmDialog
+        isOpen={desactivarConfirm !== null}
+        onCancel={() => setDesactivarConfirm(null)}
+        onConfirm={() =>
+          desactivarConfirm && desactivarMutation.mutate(desactivarConfirm.id)
+        }
+        title="Desactivar squad"
+        description={`¿Estás seguro de desactivar el squad "${desactivarConfirm?.nombre ?? ""}"? Se podrá reactivar después.`}
+        confirmText="Desactivar"
+        variant="warning"
+        isLoading={desactivarMutation.isPending}
+      />
 
       {/* Formulario Modal */}
       {isFormOpen && (
@@ -209,6 +260,11 @@ function SquadCard({ squad, onEdit, onDesactivar }: SquadCardProps) {
                 ? "bg-green-100 text-green-800"
                 : "bg-gray-100 text-gray-800"
             }`}
+            title={
+              squad.estado === "ACTIVO"
+                ? "El squad está activo"
+                : "El squad fue desactivado"
+            }
           >
             {squad.estado}
           </span>
@@ -219,6 +275,7 @@ function SquadCard({ squad, onEdit, onDesactivar }: SquadCardProps) {
             onEdit();
           }}
           className="text-sm text-primary hover:underline"
+          aria-label={`Editar squad ${squad.nombre}`}
         >
           Editar
         </button>
@@ -234,16 +291,20 @@ function SquadCard({ squad, onEdit, onDesactivar }: SquadCardProps) {
       {/* Jira IDs */}
       <div className="space-y-2 mb-3">
         {squad.idSquadCorrJira && (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Calendar className="w-4 h-4" />
-            <span>Correctivos: {squad.idSquadCorrJira}</span>
-          </div>
+          <Tooltip content="ID del board de correctivos en Jira">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Calendar className="w-4 h-4" aria-hidden="true" />
+              <span>Correctivos: {squad.idSquadCorrJira}</span>
+            </div>
+          </Tooltip>
         )}
         {squad.idSquadEvolJira && (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Users className="w-4 h-4" />
-            <span>Evolutivos: {squad.idSquadEvolJira}</span>
-          </div>
+          <Tooltip content="ID del board de evolutivos en Jira">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Users className="w-4 h-4" aria-hidden="true" />
+              <span>Evolutivos: {squad.idSquadEvolJira}</span>
+            </div>
+          </Tooltip>
         )}
       </div>
 
@@ -305,108 +366,126 @@ function SquadFormModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-card border rounded-lg shadow-lg w-full max-w-md p-6">
-        <h2 className="text-2xl font-bold mb-4">
-          {squad ? "Editar Squad" : "Nuevo Squad"}
-        </h2>
+    <AccessibleModal
+      isOpen={true}
+      onClose={onCancel}
+      title={squad ? "Editar Squad" : "Nuevo Squad"}
+      size="md"
+    >
+      <form onSubmit={handleSubmitForm} className="space-y-4">
+        {/* Nombre */}
+        <div>
+          <label
+            htmlFor="squad-nombre"
+            className="block text-sm font-medium mb-1"
+          >
+            Nombre del Squad
+          </label>
+          <input
+            id="squad-nombre"
+            type="text"
+            value={formData.nombre}
+            onChange={(e) => handleChange("nombre", e.target.value)}
+            className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+            required
+            placeholder="Squad Red, Squad Blue, etc."
+            autoFocus
+          />
+        </div>
 
-        <form onSubmit={handleSubmitForm} className="space-y-4">
-          {/* Nombre */}
+        {/* Descripción */}
+        <div>
+          <label
+            htmlFor="squad-descripcion"
+            className="block text-sm font-medium mb-1"
+          >
+            Descripción
+          </label>
+          <input
+            id="squad-descripcion"
+            type="text"
+            value={formData.descripcion || ""}
+            onChange={(e) => handleChange("descripcion", e.target.value)}
+            className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+            placeholder="Descripción del squad"
+          />
+        </div>
+
+        {/* IDs Jira */}
+        <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-sm font-medium mb-1">
-              Nombre del Squad
+            <label
+              htmlFor="squad-corr-jira"
+              className="block text-sm font-medium mb-1"
+            >
+              ID Squad Correctivos (Jira)
             </label>
             <input
+              id="squad-corr-jira"
               type="text"
-              value={formData.nombre}
-              onChange={(e) => handleChange("nombre", e.target.value)}
-              className="w-full px-3 py-2 border rounded-md"
-              required
-              placeholder="Squad Red, Squad Blue, etc."
+              value={formData.idSquadCorrJira || ""}
+              onChange={(e) => handleChange("idSquadCorrJira", e.target.value)}
+              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+              placeholder="22517"
             />
           </div>
-
-          {/* Descripción */}
           <div>
-            <label className="block text-sm font-medium mb-1">
-              Descripción
+            <label
+              htmlFor="squad-evol-jira"
+              className="block text-sm font-medium mb-1"
+            >
+              ID Squad Evolutivos (Jira)
             </label>
             <input
+              id="squad-evol-jira"
               type="text"
-              value={formData.descripcion || ""}
-              onChange={(e) => handleChange("descripcion", e.target.value)}
-              className="w-full px-3 py-2 border rounded-md"
-              placeholder="Descripción del squad"
+              value={formData.idSquadEvolJira || ""}
+              onChange={(e) => handleChange("idSquadEvolJira", e.target.value)}
+              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+              placeholder="97993"
             />
           </div>
+        </div>
 
-          {/* IDs Jira */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-sm font-medium mb-1">
-                ID Squad Correctivos (Jira)
-              </label>
-              <input
-                type="text"
-                value={formData.idSquadCorrJira || ""}
-                onChange={(e) =>
-                  handleChange("idSquadCorrJira", e.target.value)
-                }
-                className="w-full px-3 py-2 border rounded-md"
-                placeholder="22517"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">
-                ID Squad Evolutivos (Jira)
-              </label>
-              <input
-                type="text"
-                value={formData.idSquadEvolJira || ""}
-                onChange={(e) =>
-                  handleChange("idSquadEvolJira", e.target.value)
-                }
-                className="w-full px-3 py-2 border rounded-md"
-                placeholder="97993"
-              />
-            </div>
-          </div>
+        {/* Estado */}
+        <div>
+          <label
+            htmlFor="squad-estado"
+            className="block text-sm font-medium mb-1"
+          >
+            Estado
+          </label>
+          <select
+            id="squad-estado"
+            value={formData.estado}
+            onChange={(e) => handleChange("estado", e.target.value)}
+            className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+            required
+          >
+            <option value="ACTIVO">Activo</option>
+            <option value="INACTIVO">Inactivo</option>
+          </select>
+        </div>
 
-          {/* Estado */}
-          <div>
-            <label className="block text-sm font-medium mb-1">Estado</label>
-            <select
-              value={formData.estado}
-              onChange={(e) => handleChange("estado", e.target.value)}
-              className="w-full px-3 py-2 border rounded-md"
-              required
-            >
-              <option value="ACTIVO">Activo</option>
-              <option value="INACTIVO">Inactivo</option>
-            </select>
-          </div>
-
-          {/* Botones */}
-          <div className="flex justify-end gap-3 pt-4">
-            <button
-              type="button"
-              onClick={onCancel}
-              className="px-4 py-2 border rounded-md hover:bg-muted transition-colors"
-              disabled={isSubmitting}
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50"
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? "Guardando..." : "Guardar"}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+        {/* Botones */}
+        <div className="flex justify-end gap-3 pt-4">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="px-4 py-2 border rounded-md hover:bg-muted transition-colors"
+            disabled={isSubmitting}
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50"
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? "Guardando..." : "Guardar"}
+          </button>
+        </div>
+      </form>
+    </AccessibleModal>
   );
 }

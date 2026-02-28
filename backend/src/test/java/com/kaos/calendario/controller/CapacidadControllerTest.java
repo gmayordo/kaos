@@ -22,6 +22,7 @@ import com.kaos.calendario.dto.CapacidadPersonaResponse;
 import com.kaos.calendario.dto.CapacidadSquadResponse;
 import com.kaos.calendario.entity.MotivoReduccion;
 import com.kaos.calendario.service.CapacidadService;
+import jakarta.persistence.EntityNotFoundException;
 
 /**
  * Tests de integración para {@link CapacidadController}.
@@ -85,7 +86,7 @@ class CapacidadControllerTest {
                     .andExpect(jsonPath("$.personas").isArray())
                     .andExpect(jsonPath("$.personas.length()").value(1))
                     .andExpect(jsonPath("$.personas[0].horasTotales").value(40.0))
-                    .andExpect(jsonPath("$.personas[0].dias").isArray());
+                    .andExpect(jsonPath("$.personas[0].detalles").isArray());
 
             verify(service).calcularCapacidad(1L, inicio, fin);
         }
@@ -127,7 +128,7 @@ class CapacidadControllerTest {
         void calcularCapacidad_squadInexistente_retorna404() throws Exception {
             // given
             when(service.calcularCapacidad(eq(999L), any(), any()))
-                    .thenThrow(new IllegalArgumentException("Squad no encontrado: 999"));
+                    .thenThrow(new EntityNotFoundException("Squad no encontrado: 999"));
 
             // when & then
             mockMvc.perform(get("/api/v1/capacidad/squad/999")
@@ -154,9 +155,9 @@ class CapacidadControllerTest {
                             .param("fechaFin", "2026-03-02"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.horasTotales").value(8.0))
-                    .andExpect(jsonPath("$.personas[0].dias[0].horasDisponibles").value(8.0))
-                    .andExpect(jsonPath("$.personas[0].dias[0].porcentaje").value(100))
-                    .andExpect(jsonPath("$.personas[0].dias[0].motivoReduccion").isEmpty()); // null
+                    .andExpect(jsonPath("$.personas[0].detalles[0].horasDisponibles").value(8.0))
+                    .andExpect(jsonPath("$.personas[0].detalles[0].porcentajeCapacidad").value(100))
+                    .andExpect(jsonPath("$.personas[0].detalles[0].motivoReduccion").doesNotExist()); // null excluded by non_null config
         }
 
         @Test
@@ -177,8 +178,8 @@ class CapacidadControllerTest {
                             .param("fechaFin", "2026-03-07"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.horasTotales").value(0.0))
-                    .andExpect(jsonPath("$.personas[0].dias[0].horasDisponibles").value(0.0))
-                    .andExpect(jsonPath("$.personas[0].dias[0].motivoReduccion").value("FIN_SEMANA"));
+                    .andExpect(jsonPath("$.personas[0].detalles[0].horasDisponibles").value(0.0))
+                    .andExpect(jsonPath("$.personas[0].detalles[0].motivoReduccion").value("FIN_SEMANA"));
         }
 
         @Test
@@ -198,7 +199,7 @@ class CapacidadControllerTest {
                             .param("fechaInicio", "2026-01-01")
                             .param("fechaFin", "2026-01-01"))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.personas[0].dias[0].motivoReduccion").value("FESTIVO"));
+                    .andExpect(jsonPath("$.personas[0].detalles[0].motivoReduccion").value("FESTIVO"));
         }
 
         @Test
@@ -218,7 +219,7 @@ class CapacidadControllerTest {
                             .param("fechaInicio", "2026-07-15")
                             .param("fechaFin", "2026-07-15"))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.personas[0].dias[0].motivoReduccion").value("VACACION"));
+                    .andExpect(jsonPath("$.personas[0].detalles[0].motivoReduccion").value("VACACION"));
         }
 
         @Test
@@ -238,7 +239,7 @@ class CapacidadControllerTest {
                             .param("fechaInicio", "2026-03-10")
                             .param("fechaFin", "2026-03-10"))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.personas[0].dias[0].motivoReduccion").value("AUSENCIA"));
+                    .andExpect(jsonPath("$.personas[0].detalles[0].motivoReduccion").value("AUSENCIA"));
         }
 
         @Test
@@ -270,7 +271,7 @@ class CapacidadControllerTest {
                             .param("fechaFin", "2026-03-08"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.horasTotales").value(40.0))
-                    .andExpect(jsonPath("$.personas[0].dias.length()").value(7))
+                    .andExpect(jsonPath("$.personas[0].detalles.length()").value(7))
                     .andExpect(jsonPath("$.personas[0].horasTotales").value(40.0));
         }
 

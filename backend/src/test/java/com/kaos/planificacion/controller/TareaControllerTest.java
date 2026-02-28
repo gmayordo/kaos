@@ -60,7 +60,8 @@ class TareaControllerTest {
                 BigDecimal.valueOf(4), "NORMAL",
                 estado, 3, 6.0, false,
                 "KAOS-" + id,
-                LocalDateTime.now()
+                LocalDateTime.now(),
+                null, null, null
         );
     }
 

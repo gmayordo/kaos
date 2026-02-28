@@ -231,72 +231,102 @@ export const TimelineGrid: FC<Props> = ({
     );
   }
 
-  // Número de días desde la lista de la primera persona
-  const diasCount = personasFiltradas[0]?.dias.length ?? 10;
+  // Dividir los días en semanas de 5 días cada una
+  const totalDias = personasFiltradas[0]?.dias.length ?? 10;
+  const DIAS_POR_SEMANA = 5;
+  const numSemanas = Math.ceil(totalDias / DIAS_POR_SEMANA);
+  const semanas = Array.from({ length: numSemanas }, (_, s) => ({
+    label: numSemanas > 1 ? `Semana ${s + 1}` : "Días del sprint",
+    offset: s * DIAS_POR_SEMANA,
+    count: Math.min(DIAS_POR_SEMANA, totalDias - s * DIAS_POR_SEMANA),
+  }));
 
   return (
     <DragDropContext onDragEnd={handleDragEnd}>
       <div
-        className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700"
+        className="space-y-4"
         role="region"
         aria-label="Timeline de planificación"
       >
-        <table className="w-full min-w-max border-collapse text-sm">
-          {/* Cabecera días */}
-          <thead>
-            <tr>
-              <th className="w-32 border-b border-r border-gray-200 bg-gray-50 px-3 py-2 text-left text-xs font-semibold text-gray-600 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400">
-                Persona
-              </th>
-              {Array.from({ length: diasCount }, (_, i) => i + 1).map((dia) => (
-                <th
-                  key={dia}
-                  className="border-b border-r border-gray-200 bg-gray-50 px-1 py-2 text-center text-xs font-semibold text-gray-600 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400"
-                >
-                  <span className="block font-medium">
-                    {DIAS_LABEL[dia - 1] ?? dia}
-                  </span>
-                  <span className="block text-[9px] text-gray-400">{dia}</span>
-                </th>
-              ))}
-            </tr>
-          </thead>
+        {semanas.map((semana) => (
+          <div
+            key={semana.label}
+            className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700"
+          >
+            {/* Etiqueta de semana */}
+            <div className="border-b border-gray-200 bg-gray-50 px-3 py-1.5 text-xs font-semibold text-gray-500 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400">
+              {semana.label}
+            </div>
 
-          {/* Filas personas */}
-          <tbody>
-            {personasFiltradas.map((persona: PersonaEnLinea) => (
-              <tr
-                key={persona.personaId}
-                className="border-b border-gray-100 dark:border-gray-800"
-              >
-                {/* Nombre persona */}
-                <td className="border-r border-gray-200 bg-gray-50 px-3 py-2 dark:border-gray-700 dark:bg-gray-900">
-                  <p
-                    className="max-w-[112px] truncate text-xs font-medium text-gray-800 dark:text-gray-200"
-                    title={persona.personaNombre}
-                  >
-                    {persona.personaNombre}
-                  </p>
-                </td>
+            <table className="w-full min-w-max border-collapse text-sm">
+              {/* Cabecera días */}
+              <thead>
+                <tr>
+                  <th className="w-32 border-b border-r border-gray-200 bg-gray-50 px-3 py-2 text-left text-xs font-semibold text-gray-600 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400">
+                    Persona
+                  </th>
+                  {Array.from({ length: semana.count }, (_, i) => {
+                    const diaNum = semana.offset + i + 1;
+                    return (
+                      <th
+                        key={diaNum}
+                        className="border-b border-r border-gray-200 bg-gray-50 px-1 py-2 text-center text-xs font-semibold text-gray-600 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-400"
+                      >
+                        <span className="block font-medium">
+                          {DIAS_LABEL[semana.offset + i] ?? diaNum}
+                        </span>
+                        <span className="block text-[9px] text-gray-400">
+                          {diaNum}
+                        </span>
+                      </th>
+                    );
+                  })}
+                </tr>
+              </thead>
 
-                {/* Celdas días */}
-                {persona.dias.map((dia) => (
-                  <td
-                    key={dia.dia}
-                    className="border-r border-gray-100 p-1 align-top dark:border-gray-800"
-                  >
-                    <DayCell
-                      personaId={persona.personaId}
-                      dia={dia}
-                      onClickTarea={onClickTarea}
-                      onCrearEnCelda={onCrearEnCelda}
-                    />
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
+              {/* Filas personas */}
+              <tbody>
+                {personasFiltradas.map((persona: PersonaEnLinea) => {
+                  const diasSemana = persona.dias.slice(
+                    semana.offset,
+                    semana.offset + semana.count,
+                  );
+                  return (
+                    <tr
+                      key={persona.personaId}
+                      className="border-b border-gray-100 dark:border-gray-800"
+                    >
+                      {/* Nombre persona */}
+                      <td className="border-r border-gray-200 bg-gray-50 px-3 py-2 dark:border-gray-700 dark:bg-gray-900">
+                        <p
+                          className="max-w-[112px] truncate text-xs font-medium text-gray-800 dark:text-gray-200"
+                          title={persona.personaNombre}
+                        >
+                          {persona.personaNombre}
+                        </p>
+                      </td>
+
+                      {/* Celdas días de esta semana */}
+                      {diasSemana.map((dia) => (
+                        <td
+                          key={dia.dia}
+                          className="border-r border-gray-100 p-1 align-top dark:border-gray-800"
+                        >
+                          <DayCell
+                            personaId={persona.personaId}
+                            dia={dia}
+                            onClickTarea={onClickTarea}
+                            onCrearEnCelda={onCrearEnCelda}
+                          />
+                        </td>
+                      ))}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        ))}
       </div>
     </DragDropContext>
   );

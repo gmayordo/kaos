@@ -21,6 +21,10 @@ public record TareaResponse(
         Double diaCapacidadDisponible,
         Boolean bloqueada,
         String referenciaJira,
-        LocalDateTime createdAt
+        LocalDateTime createdAt,
+        // ── Jerarquía y Jira ──────────────────────────────────────────────────
+        Long tareaParentId,
+        String jiraIssueSummary,
+        BigDecimal jiraEstimacionHoras
 ) {
 }

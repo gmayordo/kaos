@@ -1,5 +1,6 @@
 package com.kaos.planificacion.controller;
 
+import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
@@ -13,9 +14,12 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import com.kaos.planificacion.dto.CrearDependenciaRequest;
+import com.kaos.planificacion.dto.DependenciaDTOResponse;
 import com.kaos.planificacion.dto.TareaRequest;
 import com.kaos.planificacion.dto.TareaResponse;
 import com.kaos.planificacion.entity.EstadoTarea;
+import com.kaos.planificacion.service.TareaDependenciaService;
 import com.kaos.planificacion.service.TareaService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -35,6 +39,7 @@ import lombok.extern.slf4j.Slf4j;
 public class TareaController {
 
     private final TareaService tareaService;
+    private final TareaDependenciaService dependenciaService;
 
     /**
      * Lista tareas con filtros opcionales.
@@ -115,6 +120,45 @@ public class TareaController {
     public ResponseEntity<Void> eliminarTarea(@PathVariable Long id) {
         log.info("DELETE /api/v1/tareas/{}", id);
         tareaService.eliminar(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    // ── Dependencias ─────────────────────────────────────────────────────────
+
+    /**
+     * Lista las dependencias de una tarea (salientes + entrantes).
+     * GET /api/v1/tareas/{id}/dependencias
+     */
+    @GetMapping("/{id}/dependencias")
+    @Operation(summary = "Lista las dependencias de una tarea (salientes + entrantes)")
+    public ResponseEntity<List<DependenciaDTOResponse>> listarDependencias(@PathVariable Long id) {
+        log.debug("GET /api/v1/tareas/{}/dependencias", id);
+        return ResponseEntity.ok(dependenciaService.listarDependencias(id));
+    }
+
+    /**
+     * Crea una dependencia desde esta tarea hacia otra.
+     * POST /api/v1/tareas/{id}/dependencias
+     */
+    @PostMapping("/{id}/dependencias")
+    @Operation(summary = "Crea una dependencia: esta tarea bloquea a la tarea destino")
+    public ResponseEntity<DependenciaDTOResponse> crearDependencia(
+            @PathVariable Long id,
+            @Valid @RequestBody CrearDependenciaRequest request) {
+        log.info("POST /api/v1/tareas/{}/dependencias → destino: {}", id, request.destinoId());
+        DependenciaDTOResponse result = dependenciaService.crearDependencia(id, request.destinoId(), request.tipo());
+        return ResponseEntity.status(HttpStatus.CREATED).body(result);
+    }
+
+    /**
+     * Elimina una dependencia por su ID.
+     * DELETE /api/v1/tareas/dependencias/{dependenciaId}
+     */
+    @DeleteMapping("/dependencias/{dependenciaId}")
+    @Operation(summary = "Elimina una dependencia entre tareas")
+    public ResponseEntity<Void> eliminarDependencia(@PathVariable Long dependenciaId) {
+        log.info("DELETE /api/v1/tareas/dependencias/{}", dependenciaId);
+        dependenciaService.eliminarDependencia(dependenciaId);
         return ResponseEntity.noContent().build();
     }
 }

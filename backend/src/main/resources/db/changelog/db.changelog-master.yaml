@@ -34,3 +34,47 @@ databaseChangeLog:
       file: db/changelog/015-create-tarea.sql
   - include:
       file: db/changelog/016-create-bloqueo.sql
+  # ── BLOQUE 4: Jira ────────────────────────────
+  - include:
+      file: db/changelog/017-create-jira-config.sql
+  - include:
+      file: db/changelog/018-create-jira-issue.sql
+  - include:
+      file: db/changelog/019-create-jira-worklog.sql
+  - include:
+      file: db/changelog/020-create-tarea-colaborador.sql
+  - include:
+      file: db/changelog/021-create-jira-api-call-log.sql
+  - include:
+      file: db/changelog/022-create-jira-sync-queue.sql
+  - include:
+      file: db/changelog/023-create-jira-sync-status.sql
+  - include:
+      file: db/changelog/024-alter-tarea-add-jira-fields.sql
+  - include:
+      file: db/changelog/025-create-jira-alert-rule.sql
+  - include:
+      file: db/changelog/026-create-jira-alerta.sql
+  - include:
+      file: db/changelog/027-seed-jira-alert-rules.sql
+  - include:
+      file: db/changelog/028-alter-jira-alert-rule-add-audit-columns.sql
+  - include:
+      file: db/changelog/029-seed-jira-config.sql
+  - include:
+      file: db/changelog/030-fix-jira-config-board-ids.sql
+  - include:
+      file: db/changelog/031-create-jira-comment.sql
+  - include:
+      file: db/changelog/032-create-jira-remote-link.sql
+  - include:
+      file: db/changelog/033-alter-jira-sync-status-add-counters.sql
+  # ── BLOQUE 5: Planificación avanzada ─────────────
+  - include:
+      file: db/changelog/034-alter-tarea-add-parent.sql
+  - include:
+      file: db/changelog/035-create-tarea-dependencia.sql
+  - include:
+      file: db/changelog/036-create-plantilla-asignacion.sql
+  - include:
+      file: db/changelog/037-alter-plantilla-asignacion-linea-add-audit.sql

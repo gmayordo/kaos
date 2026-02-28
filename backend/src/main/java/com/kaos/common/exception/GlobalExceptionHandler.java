@@ -5,9 +5,13 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import com.kaos.planificacion.exception.AsignacionRequeridaException;
 import com.kaos.planificacion.exception.CapacidadInsuficienteException;
+import com.kaos.planificacion.exception.DependenciaCiclicaException;
+import com.kaos.planificacion.exception.DependenciaDuplicadaException;
 import com.kaos.planificacion.exception.SolapamientoSprintException;
 import com.kaos.planificacion.exception.SprintNoEnPlanificacionException;
 import com.kaos.planificacion.exception.TareaNoEnPendienteException;
@@ -28,6 +32,14 @@ public class GlobalExceptionHandler {
         log.warn("Recurso no encontrado: {}", ex.getMessage());
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(ErrorResponse.of("NOT_FOUND", ex.getMessage()));
+    }
+
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<ErrorResponse> handleMissingParam(MissingServletRequestParameterException ex) {
+        log.warn("Parámetro requerido ausente: {}", ex.getParameterName());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ErrorResponse.of("MISSING_PARAMETER",
+                        "Parámetro requerido: " + ex.getParameterName()));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -104,6 +116,27 @@ public class GlobalExceptionHandler {
         log.warn("Operacion no permitida sobre tarea {}: estado actual {}", ex.getTareaId(), ex.getEstadoActual());
         return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
                 .body(ErrorResponse.of("TAREA_ESTADO_INVALIDO", ex.getMessage()));
+    }
+
+    @ExceptionHandler(DependenciaCiclicaException.class)
+    public ResponseEntity<ErrorResponse> handleDependenciaCiclica(DependenciaCiclicaException ex) {
+        log.warn("Ciclo detectado en dependencias: {} → {}", ex.getTareaOrigenId(), ex.getTareaDestinoId());
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ErrorResponse.of("DEPENDENCIA_CICLICA", ex.getMessage()));
+    }
+
+    @ExceptionHandler(DependenciaDuplicadaException.class)
+    public ResponseEntity<ErrorResponse> handleDependenciaDuplicada(DependenciaDuplicadaException ex) {
+        log.warn("Dependencia duplicada: {} → {}", ex.getTareaOrigenId(), ex.getTareaDestinoId());
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ErrorResponse.of("DEPENDENCIA_DUPLICADA", ex.getMessage()));
+    }
+
+    @ExceptionHandler(AsignacionRequeridaException.class)
+    public ResponseEntity<ErrorResponse> handleAsignacionRequerida(AsignacionRequeridaException ex) {
+        log.warn("Asignación requerida para issue {}: {}", ex.getJiraKey(), ex.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ErrorResponse.of("ASIGNACION_REQUERIDA", ex.getMessage()));
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)

@@ -3,7 +3,11 @@
  * Vista de eventos de calendario con filtro por squad
  */
 
+import { AccessibleModal } from "@/components/ui/AccessibleModal";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { AusenciaForm, EventoBadge, VacacionForm } from "@/features/calendario";
+import { toast } from "@/lib/toast";
+import { useDocumentTitle } from "@/lib/useDocumentTitle";
 import { ausenciaService } from "@/services/ausenciaService";
 import { personaService } from "@/services/personaService";
 import { squadService } from "@/services/squadService";
@@ -20,6 +24,7 @@ import {
   Calendar as CalendarIcon,
   ChevronLeft,
   ChevronRight,
+  Plus,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -29,6 +34,7 @@ export const Route = createFileRoute("/calendario")({
 
 function CalendarioPage() {
   const queryClient = useQueryClient();
+  useDocumentTitle("Calendario");
   const [squadId, setSquadId] = useState<number | null>(null);
   const [personaFiltroId, setPersonaFiltroId] = useState<number | null>(null);
   const [mes, setMes] = useState(new Date().getMonth());
@@ -38,6 +44,11 @@ function CalendarioPage() {
   const [tipoRegistroSeleccionado, setTipoRegistroSeleccionado] = useState<
     "vacacion" | "ausencia" | null
   >(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<{
+    id: number;
+    nombre: string;
+    tipo: "vacacion" | "ausencia";
+  } | null>(null);
 
   const fechaInicio = `${anio}-${String(mes + 1).padStart(2, "0")}-01`;
   const ultimoDia = new Date(anio, mes + 1, 0).getDate();
@@ -93,7 +104,9 @@ function CalendarioPage() {
       queryClient.invalidateQueries({ queryKey: ["vacaciones"] });
       setIsVacacionFormOpen(false);
       setTipoRegistroSeleccionado(null);
+      toast.success("Vacación registrada correctamente");
     },
+    onError: () => toast.error("Error al registrar la vacación"),
   });
 
   const crearAusenciaMutation = useMutation({
@@ -102,21 +115,27 @@ function CalendarioPage() {
       queryClient.invalidateQueries({ queryKey: ["ausencias"] });
       setIsAusenciaFormOpen(false);
       setTipoRegistroSeleccionado(null);
+      toast.success("Ausencia registrada correctamente");
     },
+    onError: () => toast.error("Error al registrar la ausencia"),
   });
 
   const eliminarVacacionMutation = useMutation({
     mutationFn: vacacionService.eliminar,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["vacaciones"] });
+      toast.success("Vacación eliminada");
     },
+    onError: () => toast.error("Error al eliminar la vacación"),
   });
 
   const eliminarAusenciaMutation = useMutation({
     mutationFn: ausenciaService.eliminar,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["ausencias"] });
+      toast.success("Ausencia eliminada");
     },
+    onError: () => toast.error("Error al eliminar la ausencia"),
   });
 
   const handleMesAnterior = () => {
@@ -150,15 +169,11 @@ function CalendarioPage() {
   };
 
   const handleDeleteVacacion = (id: number, personaNombre: string) => {
-    if (confirm(`¿Eliminar vacación de ${personaNombre}?`)) {
-      eliminarVacacionMutation.mutate(id);
-    }
+    setDeleteConfirm({ id, nombre: personaNombre, tipo: "vacacion" });
   };
 
   const handleDeleteAusencia = (id: number, personaNombre: string) => {
-    if (confirm(`¿Eliminar ausencia de ${personaNombre}?`)) {
-      eliminarAusenciaMutation.mutate(id);
-    }
+    setDeleteConfirm({ id, nombre: personaNombre, tipo: "ausencia" });
   };
 
   const formatFecha = (fecha: string) => {
@@ -189,24 +204,35 @@ function CalendarioPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Calendario del Equipo</h1>
-          <p className="text-zinc-600">
+          <p className="text-muted-foreground">
             Visualiza ausencias y capacidad disponible
           </p>
         </div>
         <button
           onClick={handleRegistrar}
           disabled={!squadId}
-          className="flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+          className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
         >
-          + Registrar
+          <Plus className="h-4 w-4" aria-hidden="true" />
+          Registrar
         </button>
       </div>
 
       {/* Filter Bar */}
-      <div className="flex flex-wrap items-center gap-4">
+      <div
+        className="flex flex-wrap items-center gap-4"
+        role="group"
+        aria-label="Filtros del calendario"
+      >
         <div className="flex items-center gap-2">
-          <label className="text-sm font-medium text-zinc-700">Squad:</label>
+          <label
+            htmlFor="cal-filter-squad"
+            className="text-sm font-medium text-muted-foreground"
+          >
+            Squad:
+          </label>
           <select
+            id="cal-filter-squad"
             value={squadId || ""}
             onChange={(e) => {
               setSquadId(
@@ -214,7 +240,7 @@ function CalendarioPage() {
               );
               setPersonaFiltroId(null); // reset persona al cambiar squad
             }}
-            className="rounded-md border border-zinc-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="rounded-md border border-border px-3 py-2 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary"
           >
             <option value="">Seleccionar squad...</option>
             {squads?.content.map((squad) => (
@@ -228,17 +254,21 @@ function CalendarioPage() {
         {/* Filtro por persona — solo visible cuando hay squad */}
         {squadId && (
           <div className="flex items-center gap-2">
-            <label className="text-sm font-medium text-zinc-700">
+            <label
+              htmlFor="cal-filter-persona"
+              className="text-sm font-medium text-muted-foreground"
+            >
               Persona:
             </label>
             <select
+              id="cal-filter-persona"
               value={personaFiltroId || ""}
               onChange={(e) =>
                 setPersonaFiltroId(
                   e.target.value ? Number.parseInt(e.target.value) : null,
                 )
               }
-              className="rounded-md border border-zinc-300 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="rounded-md border border-border px-3 py-2 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary"
             >
               <option value="">Todos</option>
               {personasSquad?.content.map((p) => (
@@ -253,25 +283,34 @@ function CalendarioPage() {
         <div className="flex items-center gap-2">
           <button
             onClick={handleMesAnterior}
-            className="rounded p-1 text-zinc-600 hover:bg-zinc-100"
+            aria-label="Mes anterior"
+            className="rounded p-1 text-muted-foreground hover:bg-muted"
           >
-            <ChevronLeft className="h-5 w-5" />
+            <ChevronLeft className="h-5 w-5" aria-hidden="true" />
           </button>
-          <span className="min-w-[150px] text-center text-sm font-medium capitalize">
+          <span
+            className="min-w-[150px] text-center text-sm font-medium capitalize"
+            aria-live="polite"
+          >
             {nombreMes} {anio}
           </span>
           <button
             onClick={handleMesSiguiente}
-            className="rounded p-1 text-zinc-600 hover:bg-zinc-100"
+            aria-label="Mes siguiente"
+            className="rounded p-1 text-muted-foreground hover:bg-muted"
           >
-            <ChevronRight className="h-5 w-5" />
+            <ChevronRight className="h-5 w-5" aria-hidden="true" />
           </button>
         </div>
       </div>
 
       {/* Leyenda */}
-      <div className="flex items-center gap-4 rounded-md border border-zinc-200 bg-zinc-50 p-3 text-sm">
-        <span className="font-medium text-zinc-700">Leyenda:</span>
+      <div
+        className="flex items-center gap-4 rounded-md border border-border bg-muted/50 p-3 text-sm"
+        role="legend"
+        aria-label="Leyenda de colores"
+      >
+        <span className="font-medium text-muted-foreground">Leyenda:</span>
         <EventoBadge tipo="vacacion">🔵 Vacaciones</EventoBadge>
         <EventoBadge tipo="ausencia">🟠 Ausencias</EventoBadge>
         <EventoBadge tipo="festivo">⚪ Festivos</EventoBadge>
@@ -280,9 +319,12 @@ function CalendarioPage() {
 
       {/* Sin squad seleccionado */}
       {!squadId && (
-        <div className="flex flex-col items-center justify-center rounded-md border-2 border-dashed border-zinc-300 py-16">
-          <CalendarIcon className="mb-4 h-12 w-12 text-zinc-400" />
-          <p className="text-zinc-600">
+        <div className="flex flex-col items-center justify-center rounded-md border-2 border-dashed border-border py-16">
+          <CalendarIcon
+            className="mb-4 h-12 w-12 text-muted-foreground"
+            aria-hidden="true"
+          />
+          <p className="text-muted-foreground">
             Selecciona un squad para ver el calendario
           </p>
         </div>
@@ -290,13 +332,15 @@ function CalendarioPage() {
 
       {/* Loading */}
       {squadId && isLoading && (
-        <div className="space-y-2">
+        <div
+          className="space-y-2"
+          role="status"
+          aria-label="Cargando calendario"
+        >
           {[...Array(5)].map((_, i) => (
-            <div
-              key={i}
-              className="h-16 animate-pulse rounded-md bg-zinc-100"
-            />
+            <div key={i} className="h-16 animate-pulse rounded-md bg-muted" />
           ))}
+          <span className="sr-only">Cargando datos del calendario...</span>
         </div>
       )}
 
@@ -304,16 +348,16 @@ function CalendarioPage() {
       {squadId && !isLoading && (
         <div className="space-y-4">
           {/* Vacaciones */}
-          <div className="rounded-md border border-zinc-200 bg-white">
-            <div className="border-b border-zinc-200 bg-zinc-50 px-4 py-3">
+          <div className="rounded-md border border-border bg-card">
+            <div className="border-b border-border bg-muted/50 px-4 py-3">
               <h3 className="font-semibold">Vacaciones</h3>
             </div>
-            <div className="divide-y divide-zinc-100">
+            <div className="divide-y divide-border">
               {vacacionesList.length > 0 ? (
                 vacacionesList.map((vacacion: VacacionResponse) => (
                   <div
                     key={vacacion.id}
-                    className="flex items-center justify-between px-4 py-3 hover:bg-zinc-50"
+                    className="flex items-center justify-between px-4 py-3 hover:bg-muted/50"
                   >
                     <div className="flex items-center gap-3">
                       <EventoBadge tipo="vacacion">
@@ -327,13 +371,13 @@ function CalendarioPage() {
                         <div className="font-medium">
                           {vacacion.personaNombre}
                         </div>
-                        <div className="text-sm text-zinc-600">
+                        <div className="text-sm text-muted-foreground">
                           {formatFecha(vacacion.fechaInicio)} -{" "}
                           {formatFecha(vacacion.fechaFin)} (
                           {vacacion.diasLaborables} días)
                         </div>
                         {vacacion.comentario && (
-                          <div className="text-sm text-zinc-500">
+                          <div className="text-sm text-muted-foreground/70">
                             {vacacion.comentario}
                           </div>
                         )}
@@ -346,14 +390,15 @@ function CalendarioPage() {
                           vacacion.personaNombre,
                         )
                       }
-                      className="text-zinc-400 hover:text-red-600"
+                      aria-label={`Eliminar vacación de ${vacacion.personaNombre}`}
+                      className="rounded p-1 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
                     >
                       ×
                     </button>
                   </div>
                 ))
               ) : (
-                <div className="px-4 py-8 text-center text-sm text-zinc-500">
+                <div className="px-4 py-8 text-center text-sm text-muted-foreground">
                   No hay vacaciones registradas este mes
                 </div>
               )}
@@ -361,16 +406,16 @@ function CalendarioPage() {
           </div>
 
           {/* Ausencias */}
-          <div className="rounded-md border border-zinc-200 bg-white">
-            <div className="border-b border-zinc-200 bg-zinc-50 px-4 py-3">
+          <div className="rounded-md border border-border bg-card">
+            <div className="border-b border-border bg-muted/50 px-4 py-3">
               <h3 className="font-semibold">Ausencias</h3>
             </div>
-            <div className="divide-y divide-zinc-100">
+            <div className="divide-y divide-border">
               {ausenciasList.length > 0 ? (
                 ausenciasList.map((ausencia: AusenciaResponse) => (
                   <div
                     key={ausencia.id}
-                    className="flex items-center justify-between px-4 py-3 hover:bg-zinc-50"
+                    className="flex items-center justify-between px-4 py-3 hover:bg-muted/50"
                   >
                     <div className="flex items-center gap-3">
                       <EventoBadge tipo="ausencia">{ausencia.tipo}</EventoBadge>
@@ -378,14 +423,14 @@ function CalendarioPage() {
                         <div className="font-medium">
                           {ausencia.personaNombre}
                         </div>
-                        <div className="text-sm text-zinc-600">
+                        <div className="text-sm text-muted-foreground">
                           {formatFecha(ausencia.fechaInicio)}
                           {ausencia.fechaFin
                             ? ` - ${formatFecha(ausencia.fechaFin)}`
                             : " (sin fecha fin)"}
                         </div>
                         {ausencia.comentario && (
-                          <div className="text-sm text-zinc-500">
+                          <div className="text-sm text-muted-foreground/70">
                             {ausencia.comentario}
                           </div>
                         )}
@@ -398,14 +443,15 @@ function CalendarioPage() {
                           ausencia.personaNombre,
                         )
                       }
-                      className="text-zinc-400 hover:text-red-600"
+                      aria-label={`Eliminar ausencia de ${ausencia.personaNombre}`}
+                      className="rounded p-1 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
                     >
                       ×
                     </button>
                   </div>
                 ))
               ) : (
-                <div className="px-4 py-8 text-center text-sm text-zinc-500">
+                <div className="px-4 py-8 text-center text-sm text-muted-foreground">
                   No hay ausencias registradas este mes
                 </div>
               )}
@@ -415,41 +461,53 @@ function CalendarioPage() {
       )}
 
       {/* Selector de tipo de registro */}
-      {tipoRegistroSeleccionado === "vacacion" && !isVacacionFormOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="w-full max-w-sm rounded-lg bg-white p-6 shadow-xl">
-            <h2 className="mb-4 text-lg font-semibold">
-              ¿Qué deseas registrar?
-            </h2>
-            <div className="space-y-2">
-              <button
-                onClick={() => {
-                  setTipoRegistroSeleccionado(null);
-                  setIsVacacionFormOpen(true);
-                }}
-                className="w-full rounded-md border border-blue-300 bg-blue-50 px-4 py-3 text-left font-medium text-blue-700 hover:bg-blue-100"
-              >
-                📅 Vacación
-              </button>
-              <button
-                onClick={() => {
-                  setTipoRegistroSeleccionado(null);
-                  setIsAusenciaFormOpen(true);
-                }}
-                className="w-full rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-left font-medium text-amber-700 hover:bg-amber-100"
-              >
-                🚑 Ausencia
-              </button>
-            </div>
-            <button
-              onClick={() => setTipoRegistroSeleccionado(null)}
-              className="mt-4 w-full rounded-md border border-zinc-300 px-4 py-2 text-sm text-zinc-700 hover:bg-zinc-50"
-            >
-              Cancelar
-            </button>
-          </div>
+      <AccessibleModal
+        isOpen={tipoRegistroSeleccionado === "vacacion" && !isVacacionFormOpen}
+        onClose={() => setTipoRegistroSeleccionado(null)}
+        title="¿Qué deseas registrar?"
+        size="sm"
+      >
+        <div className="space-y-2">
+          <button
+            onClick={() => {
+              setTipoRegistroSeleccionado(null);
+              setIsVacacionFormOpen(true);
+            }}
+            className="w-full rounded-md border border-blue-300 bg-blue-50 px-4 py-3 text-left font-medium text-blue-700 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-primary"
+          >
+            📅 Vacación
+          </button>
+          <button
+            onClick={() => {
+              setTipoRegistroSeleccionado(null);
+              setIsAusenciaFormOpen(true);
+            }}
+            className="w-full rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-left font-medium text-amber-700 hover:bg-amber-100 focus:outline-none focus:ring-2 focus:ring-primary"
+          >
+            🚑 Ausencia
+          </button>
         </div>
-      )}
+      </AccessibleModal>
+
+      {/* ConfirmDialog for deleting vacaciones/ausencias */}
+      <ConfirmDialog
+        isOpen={!!deleteConfirm}
+        onCancel={() => setDeleteConfirm(null)}
+        onConfirm={() => {
+          if (deleteConfirm) {
+            if (deleteConfirm.tipo === "vacacion") {
+              eliminarVacacionMutation.mutate(deleteConfirm.id);
+            } else {
+              eliminarAusenciaMutation.mutate(deleteConfirm.id);
+            }
+            setDeleteConfirm(null);
+          }
+        }}
+        title={`Eliminar ${deleteConfirm?.tipo === "vacacion" ? "vacación" : "ausencia"}`}
+        description={`¿Estás seguro de eliminar ${deleteConfirm?.tipo === "vacacion" ? "la vacación" : "la ausencia"} de ${deleteConfirm?.nombre ?? ""}?`}
+        confirmText="Eliminar"
+        variant="danger"
+      />
 
       {/* Form Dialogs */}
       {isVacacionFormOpen && personas && (

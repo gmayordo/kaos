@@ -3,7 +3,9 @@
  * Permite seleccionar squad + sprint y navegar a las vistas especializadas.
  */
 
+import { AlertasPanel } from "@/components/jira/AlertasPanel";
 import { ModalTarea, SprintSelector } from "@/features/planificacion";
+import { jiraAlertService } from "@/services/jiraService";
 import { personaService } from "@/services/personaService";
 import { sprintService } from "@/services/sprintService";
 import { squadService } from "@/services/squadService";
@@ -17,7 +19,14 @@ import type {
 } from "@/types/api";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { CalendarRange, Kanban, LayoutDashboard, Plus, X } from "lucide-react";
+import {
+  Bell,
+  CalendarRange,
+  Kanban,
+  LayoutDashboard,
+  Plus,
+  X,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 
 /** Modal inline para crear un sprint */
@@ -174,6 +183,7 @@ function PlanificacionPage() {
   const [filtroEstado, setFiltroEstado] = useState<
     "ACTIVO" | "INACTIVO" | undefined
   >(undefined);
+  const [showAlertas, setShowAlertas] = useState(false);
 
   // ── Squads ──────────────────────────────────────────────────────────────────
   const { data: squadsData } = useQuery({
@@ -202,6 +212,15 @@ function PlanificacionPage() {
       }),
   });
   const sprints = sprintsData?.content ?? [];
+
+  // ── Alertas del sprint seleccionado (badge count) ───────────────────────────
+  const { data: alertasData } = useQuery({
+    queryKey: ["jira-alertas", selectedSprint?.id],
+    queryFn: () =>
+      jiraAlertService.listarAlertas(selectedSprint!.id, 0, 200, false),
+    enabled: !!selectedSprint,
+  });
+  const alertasCount = alertasData?.totalElements ?? 0;
 
   // Sincronizar selectedSprint cuando la lista se refresca (ej. tras cambio de estado)
   useEffect(() => {
@@ -245,7 +264,8 @@ function PlanificacionPage() {
   });
 
   const replanificarSprint = useMutation({
-    mutationFn: (id: number) => sprintService.cambiarEstado(id, "PLANIFICACION"),
+    mutationFn: (id: number) =>
+      sprintService.cambiarEstado(id, "PLANIFICACION"),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["sprints"] });
     },
@@ -606,7 +626,7 @@ function PlanificacionPage() {
           </div>
 
           {/* Navegación a vistas */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <button
               onClick={goToTimeline}
               className="bg-card border border-border rounded-lg p-6 text-left hover:bg-accent transition-colors group"
@@ -652,7 +672,49 @@ function PlanificacionPage() {
                 Métricas y alertas de capacidad del sprint en tiempo real.
               </p>
             </button>
+
+            <button
+              onClick={() => setShowAlertas((prev) => !prev)}
+              className={`bg-card border border-border rounded-lg p-6 text-left transition-colors group relative ${showAlertas ? "bg-accent" : "hover:bg-accent"}`}
+            >
+              {alertasCount > 0 && (
+                <span className="absolute top-3 right-3 bg-red-500 text-white text-[10px] font-bold rounded-full px-1.5 py-0.5 min-w-[18px] text-center">
+                  {alertasCount}
+                </span>
+              )}
+              <div className="flex items-center gap-3 mb-3">
+                <Bell
+                  className={`h-8 w-8 ${alertasCount > 0 ? "text-red-500" : "text-gray-400"} group-hover:opacity-80`}
+                />
+                <h3 className="text-lg font-semibold text-foreground">
+                  Alertas
+                </h3>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Alertas Jira activas del sprint: estimaciones, worklogs y
+                co-desarrolladores.
+              </p>
+            </button>
           </div>
+
+          {/* Panel de alertas (expandible) */}
+          {showAlertas && selectedSprint && (
+            <div className="bg-card border border-border rounded-lg p-5">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold text-foreground">
+                  Alertas — {selectedSprint.nombre}
+                </h3>
+                <button
+                  onClick={() => setShowAlertas(false)}
+                  className="text-muted-foreground hover:text-foreground"
+                  aria-label="Cerrar panel de alertas"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+              <AlertasPanel sprintId={selectedSprint.id} />
+            </div>
+          )}
         </div>
       )}
 

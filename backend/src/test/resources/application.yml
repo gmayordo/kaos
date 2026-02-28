@@ -1,0 +1,75 @@
+# Configuración de tests — usa H2 in-memory en lugar de dev PostgreSQL
+# Este fichero reemplaza src/main/resources/application.yml en el classpath de tests
+
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=PostgreSQL;NON_KEYWORDS=VALUE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: false
+    open-in-view: false
+    database-platform: org.hibernate.dialect.H2Dialect
+    properties:
+      hibernate:
+        format_sql: false
+
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    default-property-inclusion: non_null
+
+  # Deshabilitar autoconfiguración de correo en tests
+  mail:
+    host: localhost
+    port: 25
+    username: test
+    password: test
+    properties:
+      mail:
+        smtp:
+          auth: false
+          starttls:
+            enable: false
+
+server:
+  port: 8080
+  servlet:
+    context-path: /
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  health:
+    mail:
+      enabled: false
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+jira:
+  load:
+    method: LOCAL
+  batch:
+    enabled: false
+    fixed-delay-ms: 1800000
+
+kaos:
+  email:
+    habilitado: false
+    resumen-sync:
+      enviar-solo-si-alertas: false
+      enviar-en-batch: false
+      destinatarios: ""

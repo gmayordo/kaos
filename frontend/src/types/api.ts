@@ -332,6 +332,12 @@ export interface TareaResponse {
   bloqueada: boolean;
   referenciaJira?: string;
   createdAt: string;
+  // Bloque 5: jerarquía Jira + dependencias
+  tareaParentId?: number;
+  jiraIssueSummary?: string;
+  jiraEstimacionHoras?: number;
+  jiraIssueKey?: string;
+  jiraHorasConsumidas?: number;
 }
 
 export interface TareaRequest {
@@ -432,6 +438,81 @@ export interface TimelineSprintResponse {
   fechaInicio: string;
   fechaFin: string;
   personas: PersonaEnLinea[];
+}
+
+// ============= Planificación — Jira Issues (Bloque 5) =============
+
+export interface PlanificarAsignacionItem {
+  jiraKey: string;
+  personaId?: number;
+  estimacion?: number;
+  diaAsignado?: number;
+  tipo?: string;
+  categoria?: string;
+  prioridad?: string;
+}
+
+export interface PlanificarIssueRequest {
+  sprintId: number;
+  asignaciones: PlanificarAsignacionItem[];
+}
+
+// ============= Planificación — Dependencias (Bloque 5) =============
+
+export type TipoDependencia = "ESTRICTA" | "SUAVE";
+
+export interface TareaDependenciaResponse {
+  id: number;
+  tareaOrigenId: number;
+  tareaOrigenTitulo: string;
+  tareaDestinoId: number;
+  tareaDestinoTitulo: string;
+  tipo: TipoDependencia;
+  createdAt: string;
+}
+
+export interface CrearDependenciaRequest {
+  tareaDestinoId: number;
+  tipo: TipoDependencia;
+}
+
+// ============= Planificación — Plantillas (Bloque 5) =============
+
+export type RolPlantilla =
+  | "DESARROLLADOR"
+  | "QA"
+  | "TECH_LEAD"
+  | "FUNCIONAL"
+  | "OTRO";
+
+export interface PlantillaAsignacionLineaResponse {
+  id: number;
+  rol: RolPlantilla;
+  porcentajeHoras: number;
+  orden: number;
+  dependeDeOrden?: number;
+}
+
+export interface PlantillaAsignacionResponse {
+  id: number;
+  nombre: string;
+  tipoJira: string;
+  activo: boolean;
+  lineas: PlantillaAsignacionLineaResponse[];
+}
+
+export interface PlantillaAsignacionLineaRequest {
+  rol: RolPlantilla;
+  porcentajeHoras: number;
+  orden: number;
+  dependeDeOrden?: number;
+}
+
+export interface PlantillaAsignacionRequest {
+  nombre: string;
+  tipoJira: string;
+  activo?: boolean;
+  lineas: PlantillaAsignacionLineaRequest[];
 }
 
 // ============= Excel Import =============

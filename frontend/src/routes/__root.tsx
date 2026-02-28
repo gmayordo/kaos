@@ -4,9 +4,12 @@ import {
   Calendar,
   CalendarDays,
   Clock,
+  GitBranch,
   Home,
   Info,
+  Layers,
   LayoutDashboard,
+  ListChecks,
   Users,
 } from "lucide-react";
 
@@ -17,6 +20,14 @@ export const Route = createRootRoute({
 function RootLayout() {
   return (
     <div className="flex min-h-screen">
+      {/* Skip to content — accesibilidad */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-0 focus:left-0 focus:z-[100] focus:bg-primary focus:text-primary-foreground focus:px-4 focus:py-2 focus:rounded-br-md focus:shadow-lg"
+      >
+        Saltar al contenido principal
+      </a>
+
       {/* Sidebar */}
       <aside className="w-64 bg-card border-r border-border flex flex-col">
         <div className="p-6">
@@ -33,7 +44,7 @@ function RootLayout() {
             </div>
           </Link>
         </div>
-        <nav className="px-4 space-y-1">
+        <nav className="px-4 space-y-1" aria-label="Navegación principal">
           <NavLink to="/" icon={Home}>
             Inicio
           </NavLink>
@@ -49,6 +60,12 @@ function RootLayout() {
           <NavLink to="/planificacion" icon={LayoutDashboard}>
             Planificación
           </NavLink>
+          <NavLink to="/jira" icon={GitBranch}>
+            Jira
+          </NavLink>
+          <NavLink to="/jira/issues" icon={ListChecks}>
+            Issues Jira
+          </NavLink>
 
           {/* Sección Configuración */}
           <div className="pt-2 pb-1 px-3">
@@ -61,6 +78,9 @@ function RootLayout() {
           </NavLink>
           <NavLink to="/configuracion/festivos" icon={CalendarDays}>
             Festivos
+          </NavLink>
+          <NavLink to="/configuracion/plantillas" icon={Layers}>
+            Plantillas
           </NavLink>
 
           <NavLink to="/about" icon={Info}>
@@ -86,7 +106,11 @@ function RootLayout() {
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 p-8 bg-background">
+      <main
+        id="main-content"
+        className="flex-1 p-8 bg-background"
+        tabIndex={-1}
+      >
         <Outlet />
       </main>
     </div>
@@ -103,12 +127,13 @@ function NavLink({ to, icon: Icon, children }: NavLinkProps) {
   return (
     <Link
       to={to}
-      className="flex items-center gap-3 px-3 py-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+      className="flex items-center gap-3 px-3 py-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors border-l-[3px] border-transparent"
       activeProps={{
-        className: "bg-accent text-foreground font-medium",
+        className:
+          "bg-accent text-foreground font-medium border-l-[3px] border-primary",
       }}
     >
-      <Icon className="h-5 w-5" />
+      <Icon className="h-5 w-5" aria-hidden="true" />
       <span>{children}</span>
     </Link>
   );

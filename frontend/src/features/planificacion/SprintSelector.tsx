@@ -5,7 +5,14 @@
  */
 
 import type { SprintResponse } from "@/types/api";
-import { CheckCircle, ChevronDown, Play, Plus, RotateCcw, Trash2 } from "lucide-react";
+import {
+  CheckCircle,
+  ChevronDown,
+  Play,
+  Plus,
+  RotateCcw,
+  Trash2,
+} from "lucide-react";
 import type { FC } from "react";
 import { useState } from "react";
 
@@ -70,9 +77,13 @@ export const SprintSelector: FC<Props> = ({
     setOpen(false);
   };
 
-  const puedeActivar = sprintSeleccionado?.estado === "PLANIFICACION" || sprintSeleccionado?.estado === "CERRADO";
+  const puedeActivar =
+    sprintSeleccionado?.estado === "PLANIFICACION" ||
+    sprintSeleccionado?.estado === "CERRADO";
   const puedeCerrar = sprintSeleccionado?.estado === "ACTIVO";
-  const puedeReplanificar = sprintSeleccionado?.estado === "ACTIVO" || sprintSeleccionado?.estado === "CERRADO";
+  const puedeReplanificar =
+    sprintSeleccionado?.estado === "ACTIVO" ||
+    sprintSeleccionado?.estado === "CERRADO";
   const puedeEliminar = sprintSeleccionado?.estado === "PLANIFICACION";
 
   if (isLoading) {

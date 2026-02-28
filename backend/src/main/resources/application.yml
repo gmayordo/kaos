@@ -22,6 +22,18 @@ spring:
       write-dates-as-timestamps: false
     default-property-inclusion: non_null
 
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${EMAIL_USERNAME:}
+    password: ${EMAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
 server:
   port: 8080
   servlet:
@@ -32,6 +44,9 @@ management:
     web:
       exposure:
         include: health,info
+  health:
+    mail:
+      enabled: false
 
 springdoc:
   api-docs:
@@ -40,3 +55,19 @@ springdoc:
     path: /swagger-ui.html
     operations-sorter: method
     tags-sorter: alpha
+
+# ── Bloque 4: Integración Jira ────────────────────────────────────────────────
+jira:
+  load:
+    method: API_REST # API_REST | SELENIUM | LOCAL
+  batch:
+    enabled: false # activar para sincronización automática cada 30 min
+    fixed-delay-ms: 1800000 # intervalo entre ejecuciones del batch (default 30 min)
+
+kaos:
+  email:
+    habilitado: false # activar para enviar resumen HTML tras cada sync
+    resumen-sync:
+      enviar-solo-si-alertas: false # si true: solo envía cuando hay alertas CRITICO
+      enviar-en-batch: true # también enviar cuando el batch hace sync
+      destinatarios: "" # lista separada por comas: lt@empresa.com,sm@empresa.com

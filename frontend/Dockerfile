@@ -4,14 +4,18 @@ WORKDIR /app
 
 # Instalar dependencias primero (cache layer)
 COPY package.json package-lock.json* ./
-RUN npm ci
+RUN npm ci --ignore-scripts
 
 # Copiar código fuente y compilar
 COPY . .
 RUN npm run build
 
 # ---- Production Stage ----
-FROM nginx:1.27-alpine
+FROM nginx:1.27-alpine AS production
+
+# Eliminar archivos innecesarios de nginx
+RUN rm -rf /usr/share/nginx/html/* /etc/nginx/conf.d/default.conf
+
 WORKDIR /usr/share/nginx/html
 
 # Copiar config de nginx

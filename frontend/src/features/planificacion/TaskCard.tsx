@@ -4,6 +4,7 @@
  * Usado en Timeline (compacto) y Kanban (estándar).
  */
 
+import { ColaboradoresChip } from "@/components/jira/ColaboradoresChip";
 import type {
   EstadoTarea,
   PrioridadTarea,
@@ -23,6 +24,8 @@ interface Props {
   onClick?: (tarea: TareaResponse) => void;
   /** Si es arrastrable (se controla externamente, aquí sólo estilo) */
   isDragging?: boolean;
+  /** Co-desarrolladores adicionales (beyond the primary assignee) */
+  colaboradores?: { nombre: string }[];
 }
 
 // ============= Mapas de colores y etiquetas =============
@@ -95,6 +98,7 @@ export const TaskCard: FC<Props> = ({
   variant = "standard",
   onClick,
   isDragging = false,
+  colaboradores,
 }) => {
   const tipo = tipoConfig[tarea.tipo as TipoTarea] ?? tipoConfig.TAREA;
   const TipoIcon = tipo.icon;
@@ -192,6 +196,17 @@ export const TaskCard: FC<Props> = ({
           </span>
         )}
       </div>
+
+      {/* Colaboradores adicionales */}
+      {colaboradores && colaboradores.length > 0 && (
+        <div className="mt-2 pt-2 border-t border-gray-100 dark:border-gray-700">
+          <ColaboradoresChip
+            personas={colaboradores}
+            size={20}
+            maxVisible={3}
+          />
+        </div>
+      )}
     </div>
   );
 };

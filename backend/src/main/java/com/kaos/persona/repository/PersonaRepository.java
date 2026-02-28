@@ -28,6 +28,9 @@ public interface PersonaRepository extends JpaRepository<Persona, Long>, JpaSpec
 
     boolean existsByIdJiraAndIdNot(String idJira, Long id);
 
+    /** Busca una persona por su clave de usuario en Jira (author.key / assignee.key). */
+    java.util.Optional<Persona> findByIdJira(String idJira);
+
     boolean existsByPerfilHorarioId(Long perfilHorarioId);
 
     /**
