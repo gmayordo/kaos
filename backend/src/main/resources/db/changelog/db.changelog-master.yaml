@@ -78,3 +78,5 @@ databaseChangeLog:
       file: db/changelog/036-create-plantilla-asignacion.sql
   - include:
       file: db/changelog/037-alter-plantilla-asignacion-linea-add-audit.sql
+  - include:
+      file: db/changelog/038-fix-mapeo-estados.sql

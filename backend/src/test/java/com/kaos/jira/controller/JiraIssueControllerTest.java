@@ -65,7 +65,8 @@ class JiraIssueControllerTest {
                 "PENDIENTE", 2, null, false,
                 jiraKey,
                 LocalDateTime.now(),
-                null, null, null
+                null, null, null,
+                null
         );
     }
 

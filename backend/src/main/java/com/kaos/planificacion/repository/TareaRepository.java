@@ -120,4 +120,10 @@ public interface TareaRepository extends JpaRepository<Tarea, Long> {
             """)
     List<Tarea> findBySprintIdWithJiraKey(
             @org.springframework.data.repository.query.Param("sprintId") Long sprintId);
+
+    /**
+     * Busca una tarea por su jira_key vinculado.
+     * Usado para enlazar jerarquía tareaParent al importar subtareas.
+     */
+    java.util.Optional<Tarea> findByJiraKey(String jiraKey);
 }

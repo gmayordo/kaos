@@ -61,7 +61,8 @@ class TareaControllerTest {
                 estado, 3, 6.0, false,
                 "KAOS-" + id,
                 LocalDateTime.now(),
-                null, null, null
+                null, null, null,
+                null
         );
     }
 

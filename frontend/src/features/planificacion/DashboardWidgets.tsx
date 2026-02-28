@@ -4,7 +4,7 @@
  * Componente presentacional: recibe datos, sin lógica de negocio.
  */
 
-import type { DashboardSprintResponse, TareaResponse } from "@/types/api";
+import type { DashboardSprintResponse, SquadMemberResponse, TareaResponse } from "@/types/api";
 import { clsx } from "clsx";
 import {
   AlertTriangle,
@@ -115,6 +115,8 @@ interface Props {
   dashboard: DashboardSprintResponse;
   /** Lista de tareas para los gráficos (opcional) */
   tareas?: TareaResponse[];
+  /** Miembros del squad (para chart de horas incluyendo personas sin tareas) */
+  squadMembers?: SquadMemberResponse[];
   /** Estado de carga */
   isLoading?: boolean;
 }
@@ -125,6 +127,7 @@ interface Props {
 export const DashboardWidgets: FC<Props> = ({
   dashboard,
   tareas = [],
+  squadMembers,
   isLoading = false,
 }) => {
   if (isLoading) {
@@ -171,13 +174,28 @@ export const DashboardWidgets: FC<Props> = ({
     },
   ].filter((d) => d.value > 0);
 
-  // Datos para gráfico de barras de ocupación por persona (desde lista de tareas)
+  // Datos para gráfico de barras de ocupación por persona
+  // Incluye todos los miembros del squad (excepto los de porcentaje ≤ 1, e.g. Scrum Master compartido)
   const ocupacionPersonaMap = new Map<string, number>();
+
+  // Inicializar con miembros del squad (excluir dedicación ≤ 1%)
+  if (squadMembers) {
+    squadMembers
+      .filter((m) => m.porcentaje > 1)
+      .forEach((m) => ocupacionPersonaMap.set(m.personaNombre, 0));
+  }
+
+  // Sumar horas de tareas asignadas
   tareas.forEach((t) => {
     if (!t.personaNombre) return;
-    const actual = ocupacionPersonaMap.get(t.personaNombre) ?? 0;
-    ocupacionPersonaMap.set(t.personaNombre, actual + t.estimacion);
+    // Solo acumular si la persona está en el mapa (miembro del squad con dedicación > 1%)
+    // o si no hay squadMembers (fallback)
+    if (!squadMembers || ocupacionPersonaMap.has(t.personaNombre)) {
+      const actual = ocupacionPersonaMap.get(t.personaNombre) ?? 0;
+      ocupacionPersonaMap.set(t.personaNombre, actual + t.estimacion);
+    }
   });
+
   const datosOcupacion = Array.from(ocupacionPersonaMap.entries())
     .map(([nombre, horas]) => ({ nombre, horas }))
     .sort((a, b) => b.horas - a.horas)

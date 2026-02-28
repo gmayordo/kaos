@@ -25,6 +25,7 @@ public record TareaResponse(
         // ── Jerarquía y Jira ──────────────────────────────────────────────────
         Long tareaParentId,
         String jiraIssueSummary,
-        BigDecimal jiraEstimacionHoras
+        BigDecimal jiraEstimacionHoras,
+        String jiraIssueKey
 ) {
 }

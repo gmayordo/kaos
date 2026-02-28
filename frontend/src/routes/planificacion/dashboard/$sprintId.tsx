@@ -6,6 +6,7 @@
 import { DashboardWidgets } from "@/features/planificacion";
 import { planificacionService } from "@/services/planificacionService";
 import { sprintService } from "@/services/sprintService";
+import { squadMemberService } from "@/services/squadMemberService";
 import { tareaService } from "@/services/tareaService";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -48,6 +49,13 @@ function DashboardPage() {
     queryFn: () => tareaService.listar(0, 200, { sprintId: id }),
   });
   const tareas = tareasData?.content ?? [];
+
+  // Miembros del squad para el gráfico de horas por persona
+  const { data: squadMembers } = useQuery({
+    queryKey: ["squad-members", sprint?.squadId],
+    queryFn: () => squadMemberService.listarPorSquad(sprint!.squadId),
+    enabled: !!sprint?.squadId,
+  });
 
   const isLoading = sprintLoading || dashboardLoading;
 
@@ -210,6 +218,7 @@ function DashboardPage() {
             <DashboardWidgets
               dashboard={dashboard}
               tareas={tareas}
+              squadMembers={squadMembers}
               isLoading={isLoading}
             />
           ) : isLoading ? (

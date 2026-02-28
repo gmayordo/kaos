@@ -5,6 +5,7 @@
  */
 
 import { ColaboradoresChip } from "@/components/jira/ColaboradoresChip";
+import { jiraIssueUrl } from "@/lib/jira";
 import type {
   EstadoTarea,
   PrioridadTarea,
@@ -155,10 +156,22 @@ export const TaskCard: FC<Props> = ({
           <TipoIcon className="h-3 w-3" aria-hidden="true" />
           {tipo.label}
         </span>
-        {tarea.referenciaJira && (
-          <span className="text-xs font-mono text-gray-400">
-            {tarea.referenciaJira}
-          </span>
+        {(tarea.jiraIssueKey ?? tarea.referenciaJira) && (
+          tarea.jiraIssueKey ? (
+            <a
+              href={jiraIssueUrl(tarea.jiraIssueKey!)}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="text-xs font-mono text-blue-500 hover:text-blue-700 hover:underline transition-colors"
+            >
+              {tarea.jiraIssueKey}
+            </a>
+          ) : (
+            <span className="text-xs font-mono text-gray-400">
+              {tarea.referenciaJira}
+            </span>
+          )
         )}
         {tarea.bloqueada && (
           <AlertCircle

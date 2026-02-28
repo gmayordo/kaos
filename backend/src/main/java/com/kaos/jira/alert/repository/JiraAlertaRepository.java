@@ -28,6 +28,10 @@ public interface JiraAlertaRepository extends JpaRepository<JiraAlerta, Long> {
      */
     @Query("""
             SELECT a FROM JiraAlerta a
+            JOIN FETCH a.regla
+            JOIN FETCH a.squad
+            JOIN FETCH a.sprint
+            LEFT JOIN FETCH a.persona
             WHERE a.sprint.id = :sprintId
               AND (:resuelta IS NULL OR a.resuelta = :resuelta)
             ORDER BY

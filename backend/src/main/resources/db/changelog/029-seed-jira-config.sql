@@ -1,6 +1,7 @@
 --liquibase formatted sql
 
 --changeset kaos:029 labels:seed,jira
+--validCheckSum: ANY
 --comment: Seed configuración Jira real — servidor umane.emeal.nttdata.com, usuario usr_virtualcare
 
 -- ═══════════════════════════════════════════════════════════════════════
@@ -37,8 +38,8 @@ SELECT
     'https://umane.emeal.nttdata.com/jiraito',
     'usr_virtualcare',
     'IvylVNnMpFES8xL4Q2wmLfUwq45USq8pDjwwFG',  -- ← sustituir por la contraseña real de usr_virtualcare en Jira
-    CAST(s.id_squad_evol_jira AS BIGINT),  -- board_correctivo_id usa mismo cf[24140] que evolutivo
-    CAST(s.id_squad_evol_jira AS BIGINT),  -- board_evolutivo_id → valor de cf[24140] del squad
+    CAST(s.id_squad_evol_jira AS BIGINT),  -- board_correctivo_id (cf[24140] identificador de squad en Jira)
+    CAST(s.id_squad_evol_jira AS BIGINT),  -- board_evolutivo_id → mismo valor cf[24140]
     'API_REST',
     TRUE,
     '{"Abierta":"PENDIENTE","Under Study":"PENDIENTE","En curso":"EN_PROGRESO","Bloqueada":"BLOQUEADA","Entregada":"EN_REVISION","Cerrada":"COMPLETADA"}',

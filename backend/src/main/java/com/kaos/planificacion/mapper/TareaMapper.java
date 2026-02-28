@@ -32,6 +32,7 @@ public interface TareaMapper {
     @Mapping(target = "tareaParentId", source = "tareaParent.id")
     @Mapping(target = "jiraIssueSummary", source = "jiraIssue.summary")
     @Mapping(target = "jiraEstimacionHoras", source = "jiraIssue.estimacionHoras")
+    @Mapping(target = "jiraIssueKey", source = "jiraKey")
     TareaResponse toResponse(Tarea tarea);
 
     List<TareaResponse> toResponseList(List<Tarea> tareas);

@@ -148,9 +148,11 @@ public class JiraImportService {
 
         issue = jiraIssueRepository.save(issue);
 
-        // Crear Tarea KAOS si es nueva y hay sprint
+        // Crear Tarea KAOS si es nueva y hay sprint; si ya existe, propagar estado
         if (issue.getTarea() == null && sprint != null) {
             crearTareaDesdeIssue(issue, sprint);
+        } else if (issue.getTarea() != null) {
+            actualizarEstadoTarea(issue.getTarea(), issue.getEstadoKaos());
         }
 
         return issue;
@@ -436,12 +438,61 @@ public class JiraImportService {
                 .persona(issue.getPersona())
                 .build();
 
+        // Vincular padre si existe tarea KAOS para el parentKey
+        if (issue.getParentKey() != null) {
+            tareaRepository.findByJiraKey(issue.getParentKey())
+                    .ifPresent(tarea::setTareaParent);
+        }
+
         tarea = tareaRepository.save(tarea);
         issue.setTarea(tarea);
         jiraIssueRepository.save(issue);
 
-        log.debug("[JiraImportService] Tarea KAOS creada — id: {}, jiraKey: {}",
-                tarea.getId(), issue.getJiraKey());
+        log.debug("[JiraImportService] Tarea KAOS creada — id: {}, jiraKey: {}, parent: {}",
+                tarea.getId(), issue.getJiraKey(),
+                tarea.getTareaParent() != null ? tarea.getTareaParent().getId() : null);
+    }
+
+    /**
+     * Propaga al Tarea KAOS existente: estado, tipo y vínculo con el padre.
+     * Se invoca cuando un issue ya tiene Tarea KAOS para mantenerla sincronizada.
+     */
+    private void actualizarEstadoTarea(Tarea tarea, String estadoKaos) {
+        boolean modificado = false;
+
+        // Estado
+        EstadoTarea nuevoEstado = mapearEstadoTarea(estadoKaos);
+        if (nuevoEstado != tarea.getEstado()) {
+            log.info("[JiraImportService] Estado Tarea {} actualizado: {} → {}",
+                    tarea.getId(), tarea.getEstado(), nuevoEstado);
+            tarea.setEstado(nuevoEstado);
+            modificado = true;
+        }
+
+        // Tipo (puede haberse quedado mal de importaciones anteriores)
+        TipoTarea nuevoTipo = mapearTipoTarea(tarea.getJiraIssue() != null ? tarea.getJiraIssue().getTipoJira() : null);
+        if (nuevoTipo != tarea.getTipo()) {
+            log.info("[JiraImportService] Tipo Tarea {} actualizado: {} → {}",
+                    tarea.getId(), tarea.getTipo(), nuevoTipo);
+            tarea.setTipo(nuevoTipo);
+            modificado = true;
+        }
+
+        // Vínculo padre (si aún no está vinculada)
+        if (tarea.getTareaParent() == null && tarea.getJiraIssue() != null
+                && tarea.getJiraIssue().getParentKey() != null) {
+            tareaRepository.findByJiraKey(tarea.getJiraIssue().getParentKey())
+                    .ifPresent(padre -> {
+                        tarea.setTareaParent(padre);
+                        log.info("[JiraImportService] TareaParent Tarea {} vinculada → {}",
+                                tarea.getId(), padre.getId());
+                    });
+            modificado = true;
+        }
+
+        if (modificado) {
+            tareaRepository.save(tarea);
+        }
     }
 
     // ── Mapeos y helpers privados ────────────────────────────────────────────
@@ -464,10 +515,10 @@ public class JiraImportService {
     private TipoTarea mapearTipoTarea(String tipoJira) {
         if (tipoJira == null) return TipoTarea.TAREA;
         return switch (tipoJira.toLowerCase()) {
-            case "story", "historia"    -> TipoTarea.HISTORIA;
-            case "bug"                   -> TipoTarea.BUG;
-            case "spike"                 -> TipoTarea.SPIKE;
-            default                      -> TipoTarea.TAREA;
+            case "story", "historia", "evolutive" -> TipoTarea.HISTORIA;
+            case "bug", "defect", "incidente"     -> TipoTarea.BUG;
+            case "spike"                           -> TipoTarea.SPIKE;
+            default                                -> TipoTarea.TAREA; // Sub-* → TAREA
         };
     }
 

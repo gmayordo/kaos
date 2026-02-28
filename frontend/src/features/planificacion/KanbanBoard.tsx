@@ -14,6 +14,7 @@ import {
 } from "@hello-pangea/dnd";
 import { clsx } from "clsx";
 import type { FC } from "react";
+import { ParentTaskCard } from "./ParentTaskCard";
 import { TaskCard } from "./TaskCard";
 
 interface Props {
@@ -97,9 +98,37 @@ export const KanbanBoard: FC<Props> = ({
     ? tareas.filter((t) => t.personaId === personaFiltroId)
     : tareas;
 
+  // ── Construir mapa padre → subtareas ──────────────────────────────────────
+  const subtareasPorPadre = new Map<number, TareaResponse[]>();
+  tareasFiltradas.forEach((t) => {
+    if (t.tareaParentId) {
+      const lista = subtareasPorPadre.get(t.tareaParentId) ?? [];
+      lista.push(t);
+      subtareasPorPadre.set(t.tareaParentId, lista);
+    }
+  });
+
+  // Devuelve el estado calculado del padre según el estado de sus subtareas
+  function estadoPadreCalculado(padreId: number): EstadoTarea {
+    const hijos = subtareasPorPadre.get(padreId) ?? [];
+    if (hijos.length === 0) return "PENDIENTE";
+    if (hijos.every((h) => h.estado === "COMPLETADA")) return "COMPLETADA";
+    if (hijos.some((h) => h.estado === "BLOQUEADO")) return "BLOQUEADO";
+    if (hijos.some((h) => h.estado === "EN_PROGRESO")) return "EN_PROGRESO";
+    return "PENDIENTE";
+  }
+
   const tareasPorEstado = COLUMNAS.reduce<Record<EstadoTarea, TareaResponse[]>>(
     (acc, col) => {
-      acc[col.id] = tareasFiltradas.filter((t) => t.estado === col.id);
+      acc[col.id] = tareasFiltradas.filter((t) => {
+        // Las subtareas no aparecen como filas raíz — solo dentro de su padre
+        if (t.tareaParentId) return false;
+        // Padres con subtareas: columna según estado calculado
+        if (subtareasPorPadre.has(t.id))
+          return estadoPadreCalculado(t.id) === col.id;
+        // Tareas independientes: columna según su propio estado
+        return t.estado === col.id;
+      });
       return acc;
     },
     { PENDIENTE: [], EN_PROGRESO: [], BLOQUEADO: [], COMPLETADA: [] },
@@ -195,29 +224,46 @@ export const KanbanBoard: FC<Props> = ({
                         Sin tareas
                       </p>
                     )}
-                    {items.map((tarea, index) => (
-                      <Draggable
-                        key={tarea.id}
-                        draggableId={String(tarea.id)}
-                        index={index}
-                      >
-                        {(drag, dragSnapshot) => (
-                          <div
-                            ref={drag.innerRef}
-                            {...drag.draggableProps}
-                            {...drag.dragHandleProps}
-                            aria-roledescription="Arrastra para mover entre columnas"
-                          >
-                            <TaskCard
-                              tarea={tarea}
-                              variant="standard"
-                              onClick={onClickTarea}
-                              isDragging={dragSnapshot.isDragging}
-                            />
-                          </div>
-                        )}
-                      </Draggable>
-                    ))}
+                    {items.map((tarea, index) => {
+                      const subtareas = subtareasPorPadre.get(tarea.id);
+                      // Padre con subtareas → ParentTaskCard (no Draggable)
+                      if (subtareas && subtareas.length > 0) {
+                        return (
+                          <ParentTaskCard
+                            key={tarea.id}
+                            tarea={tarea}
+                            subtareas={subtareas}
+                            onClickTarea={onClickTarea}
+                            draggableIndex={index}
+                            estadoCalculado={estadoPadreCalculado(tarea.id)}
+                          />
+                        );
+                      }
+                      // Tarea independiente → Draggable normal
+                      return (
+                        <Draggable
+                          key={tarea.id}
+                          draggableId={String(tarea.id)}
+                          index={index}
+                        >
+                          {(drag, dragSnapshot) => (
+                            <div
+                              ref={drag.innerRef}
+                              {...drag.draggableProps}
+                              {...drag.dragHandleProps}
+                              aria-roledescription="Arrastra para mover entre columnas"
+                            >
+                              <TaskCard
+                                tarea={tarea}
+                                variant="standard"
+                                onClick={onClickTarea}
+                                isDragging={dragSnapshot.isDragging}
+                              />
+                            </div>
+                          )}
+                        </Draggable>
+                      );
+                    })}
                     {provided.placeholder}
                   </div>
                 )}

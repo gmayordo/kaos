@@ -32,16 +32,55 @@ import { useEffect, useState } from "react";
 /** Modal inline para crear un sprint */
 function ModalNuevoSprint({
   squads,
+  sprints,
   onClose,
   onCreated,
 }: {
   squads: SquadResponse[];
+  sprints: SprintResponse[];
   onClose: () => void;
   onCreated: () => void;
 }) {
-  const [nombre, setNombre] = useState("");
+  // ── Sugerencia de nombre y fecha basada en el último sprint ──────────────
+  function calcularSugerencia() {
+    if (sprints.length === 0) {
+      return { nombre: "VirtualCare Sprint 1", fecha: "" };
+    }
+    // Sprint más reciente por orden de inserción: usar createdAt (último insertado).
+    // Si no existe createdAt, fallback a fechaFin.
+    const ultimo = sprints.reduce((prev, curr) => {
+      const currKey = curr.createdAt ?? curr.fechaFin ?? "";
+      const prevKey = prev.createdAt ?? prev.fechaFin ?? "";
+      return currKey > prevKey ? curr : prev;
+    });
+    // Extraer número al final del nombre: "VirtualCare Sprint 14" → 14
+    const match = ultimo.nombre.match(/(\d+)\s*$/);
+    const nextNum = match ? parseInt(match[1], 10) + 1 : sprints.length + 1;
+    const base = match
+      ? ultimo.nombre.replace(/\s*\d+\s*$/, "").trim()
+      : "VirtualCare Sprint";
+    // Fecha inicio: día siguiente al fechaFin del último sprint (siempre lunes)
+    let nextFecha = "";
+    if (ultimo.fechaFin) {
+      // Parsear la fecha como UTC para evitar desfases por zona horaria
+      const parts = (ultimo.fechaFin || "")
+        .split("-")
+        .map((p) => parseInt(p, 10));
+      if (parts.length === 3) {
+        const [y, m, d] = parts;
+        const finUtc = new Date(Date.UTC(y, m - 1, d));
+        // Primer día del siguiente sprint = día siguiente al fin (fin + 1 día)
+        finUtc.setUTCDate(finUtc.getUTCDate() + 1);
+        nextFecha = finUtc.toISOString().slice(0, 10);
+      }
+    }
+    return { nombre: `${base} ${nextNum}`, fecha: nextFecha };
+  }
+
+  const sugerencia = calcularSugerencia();
+  const [nombre, setNombre] = useState(sugerencia.nombre);
   const [squadId, setSquadId] = useState<number | "">("");
-  const [fechaInicio, setFechaInicio] = useState("");
+  const [fechaInicio, setFechaInicio] = useState(sugerencia.fecha);
   const [objetivo, setObjetivo] = useState("");
 
   const crearSprint = useMutation({
@@ -179,7 +218,7 @@ function PlanificacionPage() {
   const [isSquadFormOpen, setIsSquadFormOpen] = useState(false);
   const [filtroSprintEstado, setFiltroSprintEstado] = useState<
     SprintEstado | ""
-  >("");
+  >("ACTIVO");
   const [filtroEstado, setFiltroEstado] = useState<
     "ACTIVO" | "INACTIVO" | undefined
   >(undefined);
@@ -221,6 +260,14 @@ function PlanificacionPage() {
     enabled: !!selectedSprint,
   });
   const alertasCount = alertasData?.totalElements ?? 0;
+
+  // Auto-seleccionar el primer sprint activo cuando carga la lista
+  useEffect(() => {
+    if (selectedSprint === null && sprints.length > 0) {
+      const activo = sprints.find((s) => s.estado === "ACTIVO") ?? sprints[0];
+      setSelectedSprint(activo);
+    }
+  }, [sprints]);
 
   // Sincronizar selectedSprint cuando la lista se refresca (ej. tras cambio de estado)
   useEffect(() => {
@@ -722,6 +769,7 @@ function PlanificacionPage() {
       {isNuevoSprintOpen && (
         <ModalNuevoSprint
           squads={squads}
+          sprints={sprints}
           onClose={() => setIsNuevoSprintOpen(false)}
           onCreated={() =>
             queryClient.invalidateQueries({
