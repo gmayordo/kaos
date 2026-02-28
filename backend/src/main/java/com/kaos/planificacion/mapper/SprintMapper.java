@@ -25,6 +25,7 @@ public interface SprintMapper {
     @Mapping(target = "createdBy", ignore = true)
     Sprint toEntity(SprintRequest request);
 
+    @Mapping(target = "squadId", source = "squad.id")
     @Mapping(target = "squadNombre", source = "squad.nombre")
     @Mapping(target = "estado", expression = "java(sprint.getEstado().toString())")
     @Mapping(target = "tareasPendientes", ignore = true)

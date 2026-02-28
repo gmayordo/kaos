@@ -4,7 +4,11 @@
  * Componente presentacional: recibe datos, sin lógica de negocio.
  */
 
-import type { DashboardSprintResponse, SquadMemberResponse, TareaResponse } from "@/types/api";
+import type {
+  DashboardSprintResponse,
+  SquadMemberResponse,
+  TareaResponse,
+} from "@/types/api";
 import { clsx } from "clsx";
 import {
   AlertTriangle,
