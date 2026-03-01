@@ -32,8 +32,12 @@ import com.kaos.planificacion.dto.DashboardSprintResponse;
 import com.kaos.planificacion.dto.TimelineSprintResponse;
 import com.kaos.planificacion.entity.EstadoTarea;
 import com.kaos.planificacion.entity.Sprint;
+import com.kaos.planificacion.entity.TareaAsignacionTimeline;
+import com.kaos.planificacion.entity.TareaContinua;
 import com.kaos.planificacion.repository.BloqueoRepository;
 import com.kaos.planificacion.repository.SprintRepository;
+import com.kaos.planificacion.repository.TareaAsignacionTimelineRepository;
+import com.kaos.planificacion.repository.TareaContinuaRepository;
 import com.kaos.planificacion.repository.TareaRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -53,6 +57,8 @@ public class PlanificacionService {
     private final TareaRepository tareaRepository;
     private final BloqueoRepository bloqueoRepository;
     private final CapacidadService capacidadService;
+    private final TareaAsignacionTimelineRepository asignacionTimelineRepository;
+    private final TareaContinuaRepository tareaContinuaRepository;
 
     /**
      * Obtiene el dashboard de un sprint.
@@ -179,12 +185,79 @@ public class PlanificacionService {
                         .estado(tarea.getEstado().toString())
                         .prioridad(tarea.getPrioridad().toString())
                         .bloqueada(tarea.getBloqueadores() != null && !tarea.getBloqueadores().isEmpty())
+                        .origen("SPRINT")
+                        .jiraIssueKey(tarea.getJiraKey())
                         .build();
 
-                timeline.get(tarea.getPersona().getId())
-                        .get(tarea.getDiaAsignado())
-                        .add(tareaEnLinea);
+                if (timeline.containsKey(tarea.getPersona().getId())) {
+                    timeline.get(tarea.getPersona().getId())
+                            .get(tarea.getDiaAsignado())
+                            .add(tareaEnLinea);
+                }
             }
+        }
+
+        // Llenar con asignaciones de tareas padre Jira (HISTORIA) en el timeline
+        List<TareaAsignacionTimeline> asignaciones = asignacionTimelineRepository.findBySprintId(sprintId);
+        for (TareaAsignacionTimeline asignacion : asignaciones) {
+            if (asignacion.getPersona() == null) continue;
+            Long personaId = asignacion.getPersona().getId();
+            if (!timeline.containsKey(personaId)) continue;
+
+            TimelineSprintResponse.TareaEnLinea tareaEnLinea = TimelineSprintResponse.TareaEnLinea.builder()
+                    .tareaId(asignacion.getTarea().getId())
+                    .titulo(asignacion.getTarea().getTitulo())
+                    .estimacion(asignacion.getTarea().getEstimacion() != null
+                            ? asignacion.getTarea().getEstimacion().doubleValue() : null)
+                    .tipo(asignacion.getTarea().getTipo() != null ? asignacion.getTarea().getTipo().toString() : null)
+                    .estado(asignacion.getTarea().getEstado() != null ? asignacion.getTarea().getEstado().toString() : null)
+                    .prioridad(asignacion.getTarea().getPrioridad() != null ? asignacion.getTarea().getPrioridad().toString() : null)
+                    .bloqueada(false)
+                    .origen("JIRA_PADRE")
+                    .diaInicio(asignacion.getDiaInicio())
+                    .diaFin(asignacion.getDiaFin())
+                    .horasPorDia(asignacion.getHorasPorDia() != null ? asignacion.getHorasPorDia().doubleValue() : null)
+                    .esInformativa(asignacion.isEsInformativa())
+                    .jiraIssueKey(asignacion.getTarea().getJiraKey())
+                    .build();
+
+            // Las barras multi-día se añaden al día de inicio (el frontend renderiza el span)
+            timeline.get(personaId)
+                    .get(asignacion.getDiaInicio())
+                    .add(tareaEnLinea);
+        }
+
+        // Llenar con tareas continuas que se solapan con el sprint
+        List<TareaContinua> tareasContinuas = tareaContinuaRepository.findActivasEnRango(
+                sprint.getSquad().getId(), sprint.getFechaInicio(), sprint.getFechaFin());
+        for (TareaContinua tc : tareasContinuas) {
+            if (tc.getPersona() == null) continue;
+            Long personaId = tc.getPersona().getId();
+            if (!timeline.containsKey(personaId)) continue;
+
+            // Calcular qué días del sprint (1..10) abarca la tarea continua
+            int diaInicioSprint = calcularDiaEnSprint(sprint.getFechaInicio(), tc.getFechaInicio());
+            int diaFinSprint = calcularDiaFinEnSprint(sprint.getFechaInicio(), sprint.getFechaFin(), tc.getFechaFin());
+
+            TimelineSprintResponse.TareaEnLinea tareaEnLinea = TimelineSprintResponse.TareaEnLinea.builder()
+                    .tareaId(tc.getId())
+                    .titulo(tc.getTitulo())
+                    .estimacion(null)
+                    .tipo(null)
+                    .estado(null)
+                    .prioridad(null)
+                    .bloqueada(false)
+                    .origen("CONTINUA")
+                    .diaInicio(diaInicioSprint)
+                    .diaFin(diaFinSprint)
+                    .horasPorDia(tc.getHorasPorDia() != null ? tc.getHorasPorDia().doubleValue() : null)
+                    .esInformativa(tc.isEsInformativa())
+                    .color(tc.getColor())
+                    .build();
+
+            timeline.get(personaId)
+                    .get(diaInicioSprint)
+                    .add(tareaEnLinea);
         }
 
         // Construir lista de personas con su grid de días
@@ -463,6 +536,34 @@ public class PlanificacionService {
             case SATURDAY -> "Sáb";
             case SUNDAY -> "Dom";
         };
+    }
+
+    /**
+     * Calcula el día del sprint (1..10) correspondiente a una fecha.
+     * Si la fecha es anterior al inicio del sprint, devuelve 1.
+     * Solo cuenta días laborables (L-V).
+     */
+    private int calcularDiaEnSprint(LocalDate fechaInicioSprint, LocalDate fecha) {
+        if (!fecha.isAfter(fechaInicioSprint)) return 1;
+        int dia = 1;
+        LocalDate cursor = fechaInicioSprint;
+        while (cursor.isBefore(fecha) && dia < 10) {
+            cursor = cursor.plusDays(1);
+            if (cursor.getDayOfWeek() != DayOfWeek.SATURDAY && cursor.getDayOfWeek() != DayOfWeek.SUNDAY) {
+                dia++;
+            }
+        }
+        return Math.min(dia, 10);
+    }
+
+    /**
+     * Calcula el día de fin del sprint (1..10) para una tarea continua.
+     * Si fechaFinTarea es null (indefinida), devuelve 10.
+     * Si es posterior al fin del sprint, devuelve 10.
+     */
+    private int calcularDiaFinEnSprint(LocalDate fechaInicioSprint, LocalDate fechaFinSprint, LocalDate fechaFinTarea) {
+        if (fechaFinTarea == null || !fechaFinTarea.isBefore(fechaFinSprint)) return 10;
+        return calcularDiaEnSprint(fechaInicioSprint, fechaFinTarea);
     }
 
 }

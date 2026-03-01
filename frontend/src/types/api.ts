@@ -418,6 +418,21 @@ export interface TareaEnLinea {
   estado: EstadoTarea;
   prioridad: PrioridadTarea;
   bloqueada: boolean;
+  // ── Timeline Avanzado ──
+  /** "SPRINT" | "JIRA_PADRE" | "CONTINUA" */
+  origen?: string;
+  /** Día de inicio para barras multi-día (null = tarea puntual) */
+  diaInicio?: number;
+  /** Día de fin para barras multi-día (null = tarea puntual) */
+  diaFin?: number;
+  /** Horas dedicadas por día (null = capacidad completa) */
+  horasPorDia?: number;
+  /** Si true, no descuenta capacidad del sprint */
+  esInformativa?: boolean;
+  /** Clave Jira para enlace directo (ej: PROJ-123) */
+  jiraIssueKey?: string;
+  /** Color personalizado para tareas continuas (#RRGGBB) */
+  color?: string;
 }
 
 export interface DiaConTareas {
@@ -535,4 +550,63 @@ export interface ExcelImportResponse {
   ausenciasCreadas: number;
   personasNoEncontradas: string[];
   errores: string[];
+}
+
+// ============= Timeline Avanzado — TareaAsignacionTimeline =============
+
+export interface TareaAsignacionTimelineResponse {
+  id: number;
+  tareaId: number;
+  tareaTitulo: string;
+  tareaJiraKey?: string;
+  personaId: number;
+  personaNombre: string;
+  sprintId: number;
+  diaInicio: number;
+  diaFin: number;
+  horasPorDia?: number;
+  esInformativa: boolean;
+  createdAt: string;
+}
+
+export interface TareaAsignacionTimelineRequest {
+  tareaId: number;
+  personaId: number;
+  sprintId: number;
+  diaInicio: number;
+  diaFin: number;
+  horasPorDia?: number;
+  esInformativa?: boolean;
+}
+
+// ============= Timeline Avanzado — TareaContinua =============
+
+export interface TareaContinuaResponse {
+  id: number;
+  titulo: string;
+  descripcion?: string;
+  squadId: number;
+  squadNombre: string;
+  personaId?: number;
+  personaNombre?: string;
+  fechaInicio: string;
+  fechaFin?: string;
+  horasPorDia?: number;
+  esInformativa: boolean;
+  color: string;
+  activa: boolean;
+  createdAt: string;
+}
+
+export interface TareaContinuaRequest {
+  titulo: string;
+  descripcion?: string;
+  squadId: number;
+  personaId?: number;
+  fechaInicio: string;
+  fechaFin?: string;
+  horasPorDia?: number;
+  esInformativa?: boolean;
+  color?: string;
+  activa?: boolean;
 }

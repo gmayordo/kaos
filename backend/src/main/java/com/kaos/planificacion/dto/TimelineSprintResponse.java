@@ -41,6 +41,7 @@ public record TimelineSprintResponse(
 
     /**
      * Tarea en la timeline.
+     * Puede representar una tarea puntual (1 día) o una barra multi-día (diaInicio/diaFin).
      */
     @Builder
     public record TareaEnLinea(
@@ -50,7 +51,22 @@ public record TimelineSprintResponse(
             String tipo,
             String estado,
             String prioridad,
-            Boolean bloqueada
+            Boolean bloqueada,
+            // ── Campos para Timeline Avanzado ──────────────────────────────
+            /** Origen: "SPRINT" (tarea normal), "JIRA_PADRE" (via asignacion), "CONTINUA" */
+            String origen,
+            /** Día de inicio (null para tareas puntuales de 1 día) */
+            Integer diaInicio,
+            /** Día de fin (null para tareas puntuales de 1 día) */
+            Integer diaFin,
+            /** Horas dedicadas por día (null = capacidad completa) */
+            Double horasPorDia,
+            /** Si true, no descuenta capacidad del sprint */
+            Boolean esInformativa,
+            /** Clave Jira para enlace directo (ej: PROJ-123) */
+            String jiraIssueKey,
+            /** Color personalizado para tareas continuas (#RRGGBB) */
+            String color
     ) {
     }
 }
